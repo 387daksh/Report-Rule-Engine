@@ -1,0 +1,20 @@
+{
+  "domain": "mobile",
+  "headings": [
+    { "heading": "Introduction",                                        "type": "main" },
+    { "heading": "Engagement Scope",                                    "type": "main" },
+    { "heading": "Details of Auditing Team",                           "type": "main" },
+    { "heading": "Audit Activities and Timelines",                     "type": "main" },
+    { "heading": "Audit Methodology and Criteria/Standard Referred",   "type": "main" },
+    { "heading": "Tools/Software Used",                                "type": "main" },
+    { "heading": "Executive Summary",                                  "type": "main" },
+    { "heading": "Detailed Observations",                              "type": "main" },
+    { "heading": "Conclusion",                                         "type": "main" },
+    { "heading": "Appendices",                                         "type": "main" },
+    { "heading": "Risk Rating Criteria",                               "type": "sub"  },
+    { "heading": "Severity Rating",                                    "type": "sub"  },
+    { "heading": "Risk Assessment Matrix",                             "type": "sub"  },
+    { "heading": "Application Overview",                               "type": "sub"  },
+    { "heading": "Observation Summary",                                "type": "sub"  }
+  ]
+}
