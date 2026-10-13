@@ -5,6 +5,33 @@
 
 ---
 
+## ⚠ STANDING INSTRUCTION FROM THE USER — read before doing anything
+
+**Build everything from scratch. Do not salvage, adapt, or carry forward the
+earlier work.**
+
+The user was explicit on 2026-10-13: the old `rag/src/` code and the old
+`deliverables/D01`–`D12` are to be treated as waste, not as a base.
+
+Concretely, this means:
+
+- **Deliverables:** write all twelve fresh, from the `ragaudit/` system as
+  built. Do not edit, port, or quote the old `deliverables/*.md`. Do not reuse
+  their numbers — those figures measured a system with a randomly-initialised
+  reranker head and four silent-fallback paths, so they describe something
+  that was never actually running.
+- **Code:** `ragaudit/` is already the from-scratch rebuild — it shares no
+  lines with `rag/src/`. Continue it; do not restart it. *If the user meant
+  restart the package too, they will say so — confirm in one line before
+  deleting working, tested code.*
+- **Old files:** leave `rag/src/` and `deliverables/` on disk, untouched, as
+  historical record. Do not delete them and do not cite them as sources.
+
+Any empirical claim in a new deliverable must be re-measured against the new
+system. Nothing inherits a number it did not produce.
+
+---
+
 ## How to pick up
 
 ```bash
