@@ -1,0 +1,38 @@
+[
+  {
+    "question": "Is password rotation enforced for all privileged accounts every 90 days or less?",
+    "evidence": "Finding: Privileged account password rotation is configured for 60-day intervals across all domain administrator accounts, verified via a review of Active Directory Group Policy settings.",
+    "answer": "Yes",
+    "justification": "The evidence states rotation is enforced at 60-day intervals, which satisfies the 90-day-or-less requirement."
+  },
+  {
+    "question": "Is network segmentation implemented between the cardholder data environment and the corporate network?",
+    "evidence": "Finding: Firewall rule review found the payment processing subnet is reachable from the general corporate VLAN without an intermediate firewall or ACL restricting traffic.",
+    "answer": "No",
+    "justification": "The evidence shows the payment subnet is directly reachable from the corporate network, indicating segmentation is not implemented."
+  },
+  {
+    "question": "Are database backups tested for restorability on a quarterly basis?",
+    "evidence": "Finding: A backup schedule exists and backups complete successfully each night. No mention of restore testing is made in the reviewed operations logs.",
+    "answer": "Insufficient Evidence",
+    "justification": "The evidence confirms backups run but does not state whether restore tests are performed, so the specific requirement cannot be confirmed either way."
+  },
+  {
+    "question": "Is a formal change management process followed for production configuration changes?",
+    "evidence": "Finding: All configuration changes reviewed during the audit period had an associated approved change ticket, including peer review sign-off, prior to deployment.",
+    "answer": "Yes",
+    "justification": "Every sampled change had an approved ticket and peer review, meeting the formal change management requirement."
+  },
+  {
+    "question": "Are terminated employees' access credentials revoked within 24 hours of termination?",
+    "evidence": "Finding: Sample review of 10 terminations found an average revocation time of 3 business days, with two cases exceeding 5 business days.",
+    "answer": "No",
+    "justification": "The sampled revocation times substantially exceed the 24-hour requirement."
+  },
+  {
+    "question": "Is a web application firewall (WAF) deployed in front of externally facing applications?",
+    "evidence": "Finding: Endpoint detection and response (EDR) agents are deployed on 100% of corporate workstations, with centralized alerting through the SOC.",
+    "answer": "Insufficient Evidence",
+    "justification": "The evidence describes endpoint EDR coverage, not WAF deployment for external applications, so it does not address the question asked."
+  }
+]

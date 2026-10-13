@@ -1,0 +1,10 @@
+[
+  {"question_id":"RQ1","text":"Does the report contain detailed security findings?"},
+  {"question_id":"RQ2","text":"Does the report contain at least one High-severity finding?"},
+  {"question_id":"RQ3","text":"Does the report mark findings as Open?"},
+  {"question_id":"RQ4","text":"Does the report provide CWE classifications for findings?"},
+  {"question_id":"RQ5","text":"Does the report provide remediation recommendations?"},
+  {"question_id":"RQ6","text":"Does the report state that all findings are closed?"},
+  {"question_id":"RQ7","text":"Does the report include an audit timeline?"},
+  {"question_id":"RQ8","text":"Does the report state that no security findings were identified?"}
+]

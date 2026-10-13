@@ -1,0 +1,74 @@
+{
+  "device": "cpu",
+  "chunking": {"strategy": "structure_aware", "params": {"max_tokens": 420, "overlap_tokens": 60, "min_tokens": 80}},
+  "retrieval": {
+    "top_k": 8,
+    "candidates_k": 60,
+    "embed_model": "models/Qwen3-Embedding-0.6B",
+    "query_instruction": "Given a cybersecurity audit benchmark question, retrieve the audit evidence that answers it",
+    "use_hybrid": true,
+    "embed_device": "cuda:0",
+    "use_reranker": false,
+    "reranker_model": "models/Qwen3-Reranker-0.6B",
+    "use_parent_child": true,
+    "use_graph_retrieval": true,
+    "use_late_interaction": false,
+    "use_crag": true,
+    "use_hyde": false,
+    "min_retrieval_score": 0.02
+  },
+  "icl": {"strategy": "retrieval_few_shot", "k": 4, "example_bank_path": "sample_data/icl_example_bank.json"},
+  "prompt_version": "v2_evidence_review",
+  "generation": {
+    "model_name": "qwen3:8b",
+    "temperature": 0.0,
+    "seed": 42,
+    "num_predict": 384,
+    "top_p": 1.0,
+    "think": false,
+    "use_chat_api": true,
+    "enforce_schema": true
+  },
+  "verification": {"use_claim_verifier": false, "fail_closed_on_unsupported": true},
+  "redact_pii": true,
+  "redact_persisted_output": true,
+  "production_gate": {
+    "minimum_reports": 5,
+    "minimum_labelled_questions": 100,
+    "minimum_recall": 0.90,
+    "minimum_grounding": 0.99,
+    "minimum_macro_f1": 0.70
+  },
+  "pass_threshold_pct": 70.0,
+  "benchmark_questions_path": "sample_data/real_reports_benchmark_questions.json",
+  "audit_reports": [
+    {
+      "report_id": "2-REPORT",
+      "path": "sample_data/2-report.json",
+      "gold_labels": {
+        "RQ1":{"answer":"Yes","gold_chunk_ids":["8af6c6f8c811"]},
+        "RQ2":{"answer":"Yes","gold_chunk_ids":["8af6c6f8c811"]},
+        "RQ3":{"answer":"Yes","gold_chunk_ids":["8af6c6f8c811"]},
+        "RQ4":{"answer":"Yes","gold_chunk_ids":["8af6c6f8c811"]},
+        "RQ5":{"answer":"Yes","gold_chunk_ids":["a98b5aa5f672"]},
+        "RQ6":{"answer":"No","gold_chunk_ids":["8af6c6f8c811"]},
+        "RQ7":{"answer":"Yes","gold_chunk_ids":["bf6a6d544a8f"]},
+        "RQ8":{"answer":"No","gold_chunk_ids":["8af6c6f8c811"]}
+      }
+    },
+    {
+      "report_id": "4-REPORT",
+      "path": "sample_data/4-report.json",
+      "gold_labels": {
+        "RQ1":{"answer":"Yes","gold_chunk_ids":["80acc08cc2ce"]},
+        "RQ2":{"answer":"Yes","gold_chunk_ids":["ba7bf682d2ea"]},
+        "RQ3":{"answer":"Yes","gold_chunk_ids":["ba7bf682d2ea"]},
+        "RQ4":{"answer":"Yes","gold_chunk_ids":["ba7bf682d2ea"]},
+        "RQ5":{"answer":"Yes","gold_chunk_ids":["80acc08cc2ce"]},
+        "RQ6":{"answer":"No","gold_chunk_ids":["ba7bf682d2ea"]},
+        "RQ7":{"answer":"Yes","gold_chunk_ids":["acb39d6f52c9"]},
+        "RQ8":{"answer":"No","gold_chunk_ids":["ba7bf682d2ea"]}
+      }
+    }
+  ]
+}

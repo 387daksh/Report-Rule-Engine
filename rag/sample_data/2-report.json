@@ -1,0 +1,560 @@
+{
+  "report_meta": {
+    "report_id": "NA",
+    "report_title": "Tatva API Security Testing Report",
+    "report_type": "API Assessment",
+    "report_release_date": "29/05/2026",
+    "report_version": "1.0",
+    "audit_type": "Initial Audit Report",
+    "audit_period": {
+      "from": "07/04/2026 to 10/04/2026",
+      "to": ""
+    },
+    "classification": "Confidential"
+  },
+  "document_control": {
+    "document_title": "Tatva API Security Testing Report",
+    "document_id": "NA",
+    "document_version": "1.0",
+    "prepared_by": "Chandar. A",
+    "reviewed_by": "Nikhil",
+    "approved_by": "Paul",
+    "released_by": "Kumar",
+    "release_date": "29/05/2026",
+    "change_history": [],
+    "distribution_list": []
+  },
+  "introduction": {
+    "project_background": "Conduct comprehensive API assessment to identify and assess vulnerabilities in APIs.",
+    "objective": "API Security Assessment and Vulnerability Mitigation.",
+    "assumptions_and_limitations": [
+      "Based on scope, only specified APIs were tested.",
+      "Testing performed on production or staging environments as agreed."
+    ]
+  },
+  "engagement_scope": {
+    "assets": [
+      {
+        "sr_no": 1,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/pf/v1/enrollments",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 2,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/pf/v1/enrollments/",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 3,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/pf/v1/tokens",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 4,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/pf/v1/resource/",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 5,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/pf/v1/reports",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 6,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/pf/v1/tokens/select-activation",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 7,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/pf/v1/tokens/",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 8,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/ws/v1/tokens?user.id=",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 9,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/ws/v1/tokens/",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 10,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/ws/v1/tokens?user.id=&wallet.id=",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 11,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/ws/v1/tokens?wallet.id=",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 12,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/ws/v1/tokens/?wallet.id=",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 13,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/ts/v1/notifications/tokenStatusChangeNotification",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 14,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/ts/v1/notifications/replenishNotification",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 15,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/ts/v1/notifications/transactionNotification",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 16,
+        "asset_description": "API Endpoint",
+        "url": "https://in-Tatva-tr.stg.VERAHpay.ca/pf/v1/tokens/{tokenid}/transactions?since=",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      }
+    ],
+    "scope_updated_till": "",
+    "exclusions": [],
+    "testing_credentials": []
+  },
+  "auditing_team": [
+    {
+      "sr_no": 1,
+      "name": "",
+      "designation": "",
+      "email": "pulkit.puri@VERAH.com",
+      "certifications": "Deputy General Manager",
+      "cert_in_listed": "No"
+    },
+    {
+      "sr_no": 2,
+      "name": "",
+      "designation": "",
+      "email": "cr.reddy@VERAH.com",
+      "certifications": "Staff Engineering Manager",
+      "cert_in_listed": "No"
+    },
+    {
+      "sr_no": 3,
+      "name": "Paul",
+      "designation": "Manager",
+      "email": "Anubhav.paul@tat.com",
+      "certifications": "CEH, eJPT",
+      "cert_in_listed": "Yes"
+    },
+    {
+      "sr_no": 4,
+      "name": "Nikhil",
+      "designation": "Manager",
+      "email": "Nikhil.kumar@tat.com",
+      "certifications": "CPTE, CEH, CHFI, CISEH, ISO 27001",
+      "cert_in_listed": "No"
+    },
+    {
+      "sr_no": 5,
+      "name": "Chandra. A",
+      "designation": "Consultant",
+      "email": "Chandrashekar.a@tat.com",
+      "certifications": "CEH",
+      "cert_in_listed": "No"
+    }
+  ],
+  "audit_timeline": {
+    "assessment_start_date": "",
+    "assessment_end_date": "",
+    "activities": []
+  },
+  "methodology": {
+    "standards_referred": [
+      "OWASP API Security Top 10",
+      "CERT-In Guidelines",
+      "NIST SP 800-115"
+    ],
+    "approach_phases": [
+      {
+        "phase": "Reconnaissance & Scope Definition",
+        "description": "Asset identification and endpoint discovery."
+      },
+      {
+        "phase": "Vulnerability Assessment",
+        "description": "Automated and manual testing of API logic."
+      },
+      {
+        "phase": "Reporting & Remediation",
+        "description": "Documenting observations and remediation guidance."
+      }
+    ]
+  },
+  "tools_used": [
+    {
+      "sr_no": 1,
+      "tool_name": "Postman",
+      "version": "12.9.0",
+      "license_type": "Licensed"
+    },
+    {
+      "sr_no": 2,
+      "tool_name": "Burp Suite Professional",
+      "version": "2026.4.1",
+      "license_type": "Licensed"
+    }
+  ],
+  "executive_summary": {
+    "total_findings": 7,
+    "severity_count": {
+      "critical": 0,
+      "high": 1,
+      "medium": 4,
+      "low": 2
+    },
+    "summary_table": [
+      {
+        "sr_no": 1,
+        "finding_id": "OBS-01",
+        "affected_asset": "https://in-Tatva- tr.stg.VERAHpay.ca/ws/vl/toke ns?user.id=LNPzjk6bRnWj5wJ KeOhExw https://in-Tatva- tr.stg.VERAHpay.ca/ws/vl/toke ns/1P031829bc33a3004a9eb7d acda511eb0ff8 https://in-Tatva- tr.stg.VERAHpay.ca/pf/vl/toke ns/1P033d6e0147084346b6a08 5814b9eb5d2f0/transactions?si nce=1775743985433",
+        "title": "https://in-Tatva- tr.stg.VERAHpay.ca/ws/vl/toke ns?user.id=LNPzjk6bRnWj5wJ KeOhExw https://in-Tatva- tr.stg.VERAHpay.ca/ws/vl/toke ns/1P031829bc33a3004a9eb7d acda511eb0ff8 https://in-Tatva- tr.stg.VERAHpay.ca/pf/vl/toke ns/1P033d6e0147084346b6a08 5814b9eb5d2f0/transactions?si nce=1775743985433",
+        "cwe": "CWE-284: Improper Access Control",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 2,
+        "finding_id": "OBS-02",
+        "affected_asset": "https://in-Tatva- tr.stg.VERAHpay.ca/pf/vl/toke ns",
+        "title": "https://in-Tatva- tr.stg.VERAHpay.ca/pf/vl/toke ns",
+        "cwe": "CWE-307: Improper Restriction of Excessive Authenticati on Attempts",
+        "severity": "Medium",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 3,
+        "finding_id": "OBS-03",
+        "affected_asset": "https://in-Tatva- tr.stg.VERAHpay.ca/pf/vl/toke ns",
+        "title": "https://in-Tatva- tr.stg.VERAHpay.ca/pf/vl/toke ns",
+        "cwe": "CWE-287: Improper Authenticati on",
+        "severity": "Medium",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 4,
+        "finding_id": "OBS-04",
+        "affected_asset": "https://in-Tatva- tr.stg.VERAHpay.ca/pf/vl/enrol lments/",
+        "title": "https://in-Tatva- tr.stg.VERAHpay.ca/pf/vl/enrol lments/",
+        "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthoriz ed Actor",
+        "severity": "Medium",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 5,
+        "finding_id": "OBS-05",
+        "affected_asset": "https://in-Tatva- tr.stg.VERAHpay.ca/pf/vl/reso urce/*",
+        "title": "https://in-Tatva- tr.stg.VERAHpay.ca/pf/vl/reso urce/*",
+        "cwe": "CWE-639: Authorizatio n Bypass Through User- Controlled Key",
+        "severity": "Medium",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 6,
+        "finding_id": "OBS-06",
+        "affected_asset": "https://in- Tatvatr.stg.VERAHpay.ca/*",
+        "title": "https://in- Tatvatr.stg.VERAHpay.ca/*",
+        "cwe": "CWE-209: Information Exposure Through an Error Message CWE-200: Exposure of Sensitive Information to an Unauthoriz ed Actor",
+        "severity": "Low",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 7,
+        "finding_id": "OBS-07",
+        "affected_asset": "https://in- Tatvatr.stg.VERAHpay.ca/*",
+        "title": "https://in- Tatvatr.stg.VERAHpay.ca/*",
+        "cwe": "CWE-209: Information Exposure Through an Error Message CWE-200: Exposure of Sensitive Information",
+        "severity": "Low",
+        "status": "Open",
+        "new_or_repeat": "New"
+      }
+    ]
+  },
+  "detailed_observations": [
+    {
+      "finding_id": "OBS-01",
+      "title": "Broken Access Control",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-284: Improper Access Control"
+      ],
+      "affected_asset": [
+        "https://in-Tatva-tr.stg.VERAHpay.ca/ws/vl/tokens/1P031829bc33a3004a9eb7",
+        "https://in-Tatva-tr.stg.VERAHpay.ca/ws/vl/tokens?user.id=LNPzj",
+        "https://in-Tatva-tr.stg.VERAHpay.ca/pf/vl/tokens/1P033d6e0147084346b6a085814"
+      ],
+      "observation_description": "It was observed that the PATCH token management API and the user details API do not implement authentication or authorization checks. The \nendpoints allow token state modifications such as suspend and activate, and also return sensitive user information including token status and \ncard URI details, without any authentication checks.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_13_FIG_1]",
+        "[IMAGE_PAGE_14_FIG_1]",
+        "[IMAGE_PAGE_14_FIG_2]",
+        "[IMAGE_PAGE_15_FIG_1]",
+        "[IMAGE_PAGE_15_FIG_2]",
+        "[IMAGE_PAGE_16_FIG_1]"
+      ],
+      "impact": "An attacker can exploit these API endpoints to perform unauthorized token state changes and access sensitive user data. This may lead to \nexposure of confidential information, unauthorized account modifications, and potential misuse of sensitive resources, resulting in security and \nprivacy risks.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "It is recommended to:   \n  \n\u2022 \nEnforce authentication checks across all API endpoints to ensure only legitimate users can access them.  \n\u2022 \nImplement strict authorization controls for sensitive operations such as token management to restrict access based on user roles and \nprivileges. Apply object-level access control to ensure users can only interact with their own data. Ensure sensitive information is only \nreturned after proper authentication validation.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-02",
+      "title": "No Rate Limiting",
+      "status": "Open",
+      "severity": "Medium",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-307: Improper Restriction of Excessive Authentication Attempt"
+      ],
+      "affected_asset": [
+        "https://in-Tatva-tr.stg.VERAHpay.ca/pf/vl/tokens"
+      ],
+      "observation_description": "It was observed that the API endpoint protected by an authorization header requiring a one-time password (OTP) does not enforce any rate \nlimiting, allowing an attacker to continuously send a high number of requests without any restriction, delay, or blocking mechanism.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_17_FIG_1]"
+      ],
+      "impact": "A malicious actor can repeatedly send unauthorized or automated requests to brute-force OTP values or flood the endpoint, increasing the risk \nof unauthorized access, abuse of authentication mechanisms, and potential service degradation or denial of service for legitimate users.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "It is recommended to:   \n  \n\u2022 \nImplement proper rate limiting and request throttling on the API endpoint, such as restricting the number of OTP attempts per user or IP \naddress,   \n\u2022 \nIntroduce temporary lockouts after multiple failed attempts, and enforcing time-based cooldowns to prevent brute-force and abuse \nscenarios.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-03",
+      "title": "OTP Misconfiguration",
+      "status": "Open",
+      "severity": "Medium",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-284: Improper Access Control"
+      ],
+      "affected_asset": [
+        "https://in-Tatva-tr.stg.VERAHpay.ca/pf/vl/tokens"
+      ],
+      "observation_description": "It was observed that the application accepts an OTP value through the Authorization header but does not perform any validation of this value, \nallowing any arbitrary OTP to be treated as valid for authorization.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_19_FIG_1]"
+      ],
+      "impact": "A malicious actor can supply any random OTP in the Authorization header to bypass authentication controls and gain unauthorized access to \nprotected endpoints and functionality.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "It is recommended to validate the OTP supplied in the Authorization header by matching it against a generated OTP tied to the user or request, \nenforcing expiration and rejecting invalid or reused values.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-04",
+      "title": "Sensitive Information Disclosure",
+      "status": "Open",
+      "severity": "Medium",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-284: Improper Access Control"
+      ],
+      "affected_asset": [
+        "https://in-Tatva-tr.stg.VERAHpay.ca/pf/vl/enrollments/"
+      ],
+      "observation_description": "It was observed that an API responds with sensitive certificate data, including NPCI certificates and device root certificates, when all security \nheaders are removed and the server ID parameter is tampered with, indicating that access controls and response filtering are not properly \nenforced.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_21_FIG_1]",
+        "[IMAGE_PAGE_21_FIG_2]"
+      ],
+      "impact": "A malicious actor can extract internal certificate information by manipulating request headers or parameters, which may aid in further attacks \nsuch as environment fingerprinting, trust chain analysis, or crafting more targeted exploitation attempts.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "It is recommended to restrict API responses to authorized and valid requests only by enforcing strict header validation, validating server \nidentifiers, and ensuring sensitive certificates or internal configuration data are never exposed in API responses.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-05",
+      "title": "Insecure Direct Object Reference",
+      "status": "Open",
+      "severity": "Medium",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-639: Authorization Bypass Through User-Controlled Key"
+      ],
+      "affected_asset": [
+        "https://in-Tatva-tr.stg.VERAHpay.ca/pf/vl/resource/*"
+      ],
+      "observation_description": "It was observed that the application allows access to card details by using MID and DMID parameters that differ for each device. However, by \nmodifying the MID and DMID values to those of other devices, the user was still able to access card details within the same session, indicating \nimproper authorization checks on these parameters.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_23_FIG_1]",
+        "[IMAGE_PAGE_23_FIG_2]"
+      ],
+      "impact": "The attacker only needs a static card URI to access and view sensitive card data within their active session, without requiring further \nauthorization. This can lead to unauthorized exposure of sensitive financial information, resulting in data breaches, fraud, and compliance \nviolations.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "It is recommended to: Implement strict server-side authorization checks to ensure that MID and DMID values are properly mapped to the \nauthenticated user session. Validate that users can only access resources explicitly assigned to them. Avoid relying solely on client-supplied \nidentifiers for access control. Use indirect references or token-based validation to securely fetch card details.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-06",
+      "title": "Improper Error Handling",
+      "status": "Open",
+      "severity": "Low",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-209: Information Exposure Through an Error Message",
+        "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor"
+      ],
+      "affected_asset": [
+        "https://in-Tatva-tr.stg.VERAHpay.ca/*"
+      ],
+      "observation_description": "It was observed that when API endpoints are tampered with, the application responds with an HTTP 400 error that discloses detailed exception \nstack traces, and in cases where a duplicate entry is submitted, the API returns an HTTP 500 internal server error revealing database-related \ndetails such as table or column headers, which exposes internal implementation information to the user.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_25_FIG_1]",
+        "[IMAGE_PAGE_25_FIG_2]"
+      ],
+      "impact": "A malicious actor can leverage the exposed stack traces, database table names, and internal error details to gain insight into the application\u2019s \nbackend logic, database structure, and technologies in use, which can significantly aid in crafting targeted attacks such as SQL injection, privilege \nescalation, or further exploitation of the application.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "It is recommended to implement proper error handling by returning generic and user-friendly error messages for all API responses, while \nlogging detailed error information securely on the server side, and ensuring that exception stack traces, database details, and internal system \ninformation are never exposed to end users.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-07",
+      "title": "Banner Grabbing",
+      "status": "Open",
+      "severity": "Low",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-209: Information Exposure Through an Error Message",
+        "CWE-200: Exposure of Sensitive Information"
+      ],
+      "affected_asset": [
+        "https://in-Tatva-tr.stg.VERAHpay.ca/*"
+      ],
+      "observation_description": "It was observed that by tampering with the API endpoint, the server returns an  error page that discloses internal details such as  Apache and \nits version. This unnecessary exposure allows attackers to fingerprint the technology stack.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_26_FIG_1]"
+      ],
+      "impact": "A malicious actor can use the disclosed server name and version information to understand the underlying technology stack and identify known \nweaknesses, making it easier to plan targeted attacks against the system.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "It is recommended to configure the application and web server to suppress detailed error messages and remove server name and version \ninformation from all responses, including error pages, by using generic error messages instead.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    }
+  ],
+  "appendices": {
+    "risk_rating_criteria": [
+      {
+        "rating": "Critical",
+        "description": "Vulnerabilities that cause immediate, catastrophic system or business compromise."
+      },
+      {
+        "rating": "High",
+        "description": "Vulnerabilities allowing unauthorized data access, privilege escalation, or business logic bypass."
+      },
+      {
+        "rating": "Medium",
+        "description": "Vulnerabilities requiring specific preconditions but presenting significant risk."
+      },
+      {
+        "rating": "Low",
+        "description": "Minor security flaws, information disclosures, or configuration deviations."
+      }
+    ],
+    "controlled_vocabulary_reference": "CVSS v3.1 / CWE / OWASP API Security",
+    "remediation_roadmap": [],
+    "retest_closure": []
+  },
+  "_meta": {
+    "pipeline_version": "3.0.0-decoupled",
+    "source_file": "2-report.pdf",
+    "structuring_backend": "rule_based",
+    "structuring_model": "Qwen/Qwen3.8-27B"
+  }
+}

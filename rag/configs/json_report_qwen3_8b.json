@@ -1,0 +1,51 @@
+{
+  "device": "cpu",
+  "chunking": {"strategy": "structure_aware", "params": {"max_tokens": 420, "overlap_tokens": 60, "min_tokens": 80}},
+  "retrieval": {
+    "top_k": 8,
+    "candidates_k": 60,
+    "embed_model": "models/Qwen3-Embedding-0.6B",
+    "query_instruction": "Given a cybersecurity audit benchmark question, retrieve the audit evidence that answers it",
+    "use_hybrid": true,
+    "use_reranker": false,
+    "reranker_model": "models/Qwen3-Reranker-0.6B",
+    "use_parent_child": true,
+    "use_graph_retrieval": true,
+    "use_late_interaction": false,
+    "use_crag": true,
+    "use_hyde": false
+  },
+  "icl": {"strategy": "retrieval_few_shot", "k": 4, "example_bank_path": "sample_data/icl_example_bank.json"},
+  "prompt_version": "v2_evidence_review",
+  "generation": {
+    "model_name": "qwen3:8b",
+    "temperature": 0.0,
+    "seed": 42,
+    "num_predict": 512,
+    "top_p": 1.0,
+    "think": false,
+    "use_chat_api": true,
+    "enforce_schema": true
+  },
+  "verification": {"use_claim_verifier": false},
+  "pass_threshold_pct": 70.0,
+  "benchmark_questions_path": "sample_data/json_report_benchmark_questions.json",
+  "audit_reports": [{
+    "report_id": "BEST-FINAL",
+    "path": "../../Best - FINAL_Optimized_Clean (1).json",
+    "gold_labels": {
+      "JQ1": {"answer":"Yes", "gold_chunk_ids":["22b8d83ef514"]},
+      "JQ2": {"answer":"Yes", "gold_chunk_ids":["282580deb79d"]},
+      "JQ3": {"answer":"Yes", "gold_chunk_ids":["fc4ce26cf53c"]},
+      "JQ4": {"answer":"Yes", "gold_chunk_ids":["10c24a05f3f0"]},
+      "JQ5": {"answer":"Yes", "gold_chunk_ids":["6b5adafb4691"]},
+      "JQ6": {"answer":"Yes", "gold_chunk_ids":["5af7a4730724"]},
+      "JQ7": {"answer":"Yes", "gold_chunk_ids":["dae78826e1d1"]},
+      "JQ8": {"answer":"Yes", "gold_chunk_ids":["515c993a42ec"]},
+      "JQ9": {"answer":"Yes", "gold_chunk_ids":["6448f053491d"]},
+      "JQ10": {"answer":"Yes", "gold_chunk_ids":["8af5ef870238"]},
+      "JQ11": {"answer":"No", "gold_chunk_ids":["22b8d83ef514"]},
+      "JQ12": {"answer":"No", "gold_chunk_ids":["22b8d83ef514"]}
+    }
+  }]
+}

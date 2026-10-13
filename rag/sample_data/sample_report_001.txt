@@ -1,0 +1,119 @@
+CYBERSECURITY AUDIT REPORT
+Report ID: AR-2026-001
+Auditee: Example Financial Services Pvt. Ltd.
+Audit Period: 01 Jan 2026 - 31 Jan 2026
+Audit Standard Reference: ISO/IEC 27001:2022, NIST CSF 2.0
+
+Executive Summary
+
+This report presents the findings of a cybersecurity audit conducted on the
+IT infrastructure and information security management system of Example
+Financial Services Pvt. Ltd. The audit assessed access control, patch
+management, incident response, logging and monitoring, and third-party
+risk management practices. Overall, the organisation demonstrates a
+moderately mature security posture with several high-priority gaps
+requiring remediation within 30 days.
+
+Scope of Audit
+
+The audit covered all production servers, the corporate network perimeter,
+the customer-facing web application, and the organisation's incident
+response procedures. Cloud infrastructure hosted on the organisation's
+primary IaaS provider was included. Third-party vendor systems were
+excluded except where data-sharing agreements were in scope.
+
+Methodology
+
+The audit team conducted interviews with IT and security personnel,
+reviewed policy documentation, performed configuration reviews of a
+sample of 25 servers, and analysed six months of security event logs.
+Vulnerability scanning was performed using an authenticated scan against
+all in-scope systems between 05 and 09 January 2026.
+
+Findings
+
+Finding 1 - Multi-Factor Authentication Coverage
+Multi-factor authentication (MFA) is enforced for all administrative
+accounts accessing production systems via the central identity provider.
+However, three legacy service accounts identified during the configuration
+review were found to authenticate using password-only access. These
+accounts have not been remediated as of the report date.
+
+Finding 2 - Patch Management
+The organisation maintains a documented patch management policy requiring
+critical security patches to be applied within 14 days of release. Review
+of patch logs for the audit period showed that 92% of critical patches
+were applied within the required window. Eight servers were found to be
+running an operating system version that reached end-of-life support six
+months prior to the audit.
+
+Finding 3 - Logging and Monitoring
+Centralised logging is implemented via a SIEM platform that ingests logs
+from network devices, servers, and the identity provider. Log retention is
+configured for 180 days, meeting the organisation's internal policy
+requirement of 90 days minimum. Alerting rules exist for failed login
+thresholds, but no alerting rule currently exists for anomalous outbound
+data transfer volumes.
+
+Finding 4 - Incident Response
+An incident response plan exists and was last reviewed 14 months ago,
+exceeding the organisation's internal annual review requirement. The plan
+defines roles, escalation paths, and communication procedures. No
+tabletop exercise or simulated incident drill was conducted during the
+preceding 12 months.
+
+Finding 5 - Vulnerability Management
+The vulnerability scan identified 14 medium-severity and 2 high-severity
+vulnerabilities. Both high-severity vulnerabilities relate to an outdated
+version of a web server component on the customer-facing application and
+have an available vendor patch. As of the report date, one of the two
+high-severity vulnerabilities remains unpatched, 11 days after
+identification, against an internal SLA of 7 days for high-severity
+findings.
+
+Finding 6 - Data Encryption
+Data at rest in the primary production database is encrypted using
+AES-256. Data in transit between the web application and the database is
+encrypted via TLS 1.2. Backup media stored at the organisation's offsite
+facility is not encrypted.
+
+Finding 7 - Third-Party Risk Management
+The organisation maintains a vendor risk register covering 18 active
+third-party data-processing relationships. Annual security questionnaires
+were completed for 15 of the 18 vendors during the audit period. Contracts
+for the remaining three vendors do not contain a data breach notification
+clause.
+
+Recommendations
+
+R1. Remediate the three password-only legacy service accounts identified
+in Finding 1 by enforcing MFA or decommissioning the accounts, within 30
+days.
+
+R2. Upgrade or replace the eight end-of-life servers identified in Finding
+2, and review the patch SLA against the 8% of critical patches that missed
+the 14-day window.
+
+R3. Implement an alerting rule for anomalous outbound data transfer
+volumes to close the gap identified in Finding 3.
+
+R4. Conduct an annual incident response tabletop exercise, with the next
+exercise scheduled within 90 days.
+
+R5. Patch the remaining high-severity vulnerability identified in Finding
+5 immediately; the current delay already exceeds the internal 7-day SLA.
+
+R6. Extend encryption-at-rest coverage to offsite backup media identified
+in Finding 6.
+
+R7. Obtain updated third-party contracts including a data breach
+notification clause for the three vendors identified in Finding 7.
+
+Conclusion
+
+Example Financial Services Pvt. Ltd. demonstrates a generally sound
+security control environment with documented policies covering the core
+domains assessed. The audit identified one overdue high-severity
+vulnerability and several process gaps that should be prioritised for
+remediation. No critical, unremediated findings from the prior audit
+cycle were identified as still open.

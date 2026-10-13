@@ -1,0 +1,828 @@
+{
+  "report_meta": {
+    "report_id": "NA",
+    "report_title": "API Assessment / VAPT Report",
+    "report_type": "API Assessment",
+    "report_release_date": "",
+    "report_version": "1.0",
+    "audit_type": "Initial Audit Report",
+    "audit_period": {
+      "from": "",
+      "to": ""
+    },
+    "classification": "Confidential"
+  },
+  "document_control": {
+    "document_title": "API Assessment Report",
+    "document_id": "NA",
+    "document_version": "1.0",
+    "prepared_by": "Cerulean Shield Cyber Assurance LLP",
+    "reviewed_by": "",
+    "approved_by": "",
+    "released_by": "",
+    "release_date": "",
+    "change_history": [],
+    "distribution_list": []
+  },
+  "introduction": {
+    "project_background": "Conduct comprehensive API assessment to identify and assess vulnerabilities in APIs.",
+    "objective": "API Security Assessment and Vulnerability Mitigation.",
+    "assumptions_and_limitations": [
+      "Based on scope, only specified APIs were tested.",
+      "Testing performed on production or staging environments as agreed."
+    ]
+  },
+  "engagement_scope": {
+    "assets": [
+      {
+        "sr_no": 1,
+        "asset_description": "RouteLedger web portal",
+        "url": "https:// uat.routeledger.harborline.example",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 2,
+        "asset_description": "Operations dashboard",
+        "url": "https:// uat.routeledger.harborline.example/app",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 3,
+        "asset_description": "Shipment and exception modules",
+        "url": "https:// uat.routeledger.harborline.example/ dispatch",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 4,
+        "asset_description": "Admin and finance functions",
+        "url": "https:// uat.routeledger.harborline.example/ admin",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      },
+      {
+        "sr_no": 5,
+        "asset_description": "Static content/CDN",
+        "url": "https:// cdn.routeledger.harborline.example",
+        "criticality": "High",
+        "internal_ip": "NA",
+        "public_ip": "NA",
+        "in_scope_functions": "Full API Methods"
+      }
+    ],
+    "scope_updated_till": "",
+    "exclusions": [],
+    "testing_credentials": []
+  },
+  "auditing_team": [],
+  "audit_timeline": {
+    "assessment_start_date": "",
+    "assessment_end_date": "",
+    "activities": []
+  },
+  "methodology": {
+    "standards_referred": [
+      "OWASP API Security Top 10",
+      "CERT-In Guidelines",
+      "NIST SP 800-115"
+    ],
+    "approach_phases": [
+      {
+        "phase": "Reconnaissance & Scope Definition",
+        "description": "Asset identification and endpoint discovery."
+      },
+      {
+        "phase": "Vulnerability Assessment",
+        "description": "Automated and manual testing of API logic."
+      },
+      {
+        "phase": "Reporting & Remediation",
+        "description": "Documenting observations and remediation guidance."
+      }
+    ]
+  },
+  "tools_used": [
+    {
+      "sr_no": 1,
+      "tool_name": "Burp Suite Professional, browser developer tools, Postman",
+      "version": "Latest",
+      "license_type": "Open Source"
+    },
+    {
+      "sr_no": 2,
+      "tool_name": "Nmap, httpx, ffuf, manual sitemap review",
+      "version": "Latest",
+      "license_type": "Open Source"
+    }
+  ],
+  "executive_summary": {
+    "total_findings": 15,
+    "severity_count": {
+      "critical": 0,
+      "high": 15,
+      "medium": 0,
+      "low": 0
+    },
+    "summary_table": [
+      {
+        "sr_no": 1,
+        "finding_id": "OBS-01",
+        "affected_asset": "API Target",
+        "title": "Broken object-level authorization on POD download",
+        "cwe": "CWE-284",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 2,
+        "finding_id": "OBS-02",
+        "affected_asset": "API Target",
+        "title": "Missing function-level authorization on finance export",
+        "cwe": "CWE-284",
+        "severity": "Critical",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 3,
+        "finding_id": "OBS-03",
+        "affected_asset": "API Target",
+        "title": "Stored XSS in delivery exception notes",
+        "cwe": "CWE-284",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 4,
+        "finding_id": "OBS-04",
+        "affected_asset": "API Target",
+        "title": "SQL error disclosure and injection-prone search parameter",
+        "cwe": "CWE-284",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 5,
+        "finding_id": "OBS-05",
+        "affected_asset": "API Target",
+        "title": "Password reset OTP lacks effective rate limiting and reveals valid users",
+        "cwe": "CWE-284",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 6,
+        "finding_id": "OBS-06",
+        "affected_asset": "API Target",
+        "title": "Claim attachment upload permits active SVG content",
+        "cwe": "CWE-284",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 7,
+        "finding_id": "OBS-07",
+        "affected_asset": "API Target",
+        "title": "Session cookie flags and idle timeout controls are insufficient",
+        "cwe": "CWE-284",
+        "severity": "Medium",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 8,
+        "finding_id": "OBS-08",
+        "affected_asset": "API Target",
+        "title": "Security headers missing with verbose stack traces exposed",
+        "cwe": "CWE-284",
+        "severity": "Medium",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 9,
+        "finding_id": "OBS-09",
+        "affected_asset": "API Target",
+        "title": "AFFECTED ASSET /shipments/{shipmentId}/do cuments/pod RouteLedger UAT",
+        "cwe": "PRIMARY CATEGORY CWE-639 / CWE-862 Branch Dispatcher - BLR-WEST",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 10,
+        "finding_id": "OBS-10",
+        "affected_asset": "API Target",
+        "title": "AFFECTED ASSET /admin/finance/exports/reco nciliation RouteLedger UAT",
+        "cwe": "PRIMARY CATEGORY CWE-285 / CWE-862 Branch Dispatcher token used against admin function",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 11,
+        "finding_id": "OBS-11",
+        "affected_asset": "API Target",
+        "title": "AFFECTED ASSET /dispatch/exceptions/{shipm entId}/notes RouteLedger UAT",
+        "cwe": "PRIMARY CATEGORY CWE-79 Branch Dispatcher and Exception Reviewer",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 12,
+        "finding_id": "OBS-12",
+        "affected_asset": "API Target",
+        "title": "AFFECTED ASSET /dispatch/search? query= RouteLedger UAT",
+        "cwe": "PRIMARY CATEGORY CWE-89 / CWE-209 Authenticated dispatcher and support users",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 13,
+        "finding_id": "OBS-13",
+        "affected_asset": "API Target",
+        "title": "AFFECTED ASSET /auth/password/forgot and /auth/password/verify-otp RouteLedger UAT",
+        "cwe": "PRIMARY CATEGORY CWE-307 / CWE-203 Unauthenticated attacker against known email format",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 14,
+        "finding_id": "OBS-14",
+        "affected_asset": "API Target",
+        "title": "AFFECTED ASSET /claims/{claimId}/attac hments RouteLedger UAT",
+        "cwe": "PRIMARY CATEGORY CWE-434 / CWE-79 Claims Reviewer",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 15,
+        "finding_id": "OBS-15",
+        "affected_asset": "API Target",
+        "title": "AFFECTED ASSET Application session management RouteLedger UAT",
+        "cwe": "PRIMARY CATEGORY CWE-614 / CWE-613 All authenticated users",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      },
+      {
+        "sr_no": 16,
+        "finding_id": "OBS-16",
+        "affected_asset": "API Target",
+        "title": "AFFECTED ASSET Public and authenticated web routes RouteLedger UAT",
+        "cwe": "PRIMARY CATEGORY CWE-693 / CWE-209 Unauthenticated and authenticated users",
+        "severity": "High",
+        "status": "Open",
+        "new_or_repeat": "New"
+      }
+    ]
+  },
+  "detailed_observations": [
+    {
+      "finding_id": "OBS-01",
+      "title": "Initiation",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-284: Improper Access Control"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "Scope confirmation, rules of engagement, credential validation and evidence-naming convention \nsetup.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "Executed payload against API Endpoint"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-02",
+      "title": "Discovery",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-284: Improper Access Control"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "Application crawling, endpoint inventory, role mapping and identification of high-value workflows.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "Executed payload against API Endpoint"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-03",
+      "title": "Validation",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-284: Improper Access Control"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "Manual authorization, input, session, file handling, configuration and workflow-abuse test cases.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "Executed payload against API Endpoint"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-04",
+      "title": "Reporting",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-639 / CWE-862 Branch Dispatcher - BLR-WEST",
+        "CWE-639 /",
+        "CWE-862"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "Risk scoring, root-cause classification, remediation recommendations and peer review.\n\n[IMAGE_PAGE_6_FIG_2] *(Figure 2: page_6_fig_2.png, 1300x650px)*\n\n[IMAGE_PAGE_6_FIG_3] *(Figure 3: page_6_fig_3.png, 1100x660px)*\n\n[IMAGE_PAGE_6_FIG_4] *(Figure",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_6_FIG_1]",
+        "[IMAGE_PAGE_6_FIG_2]",
+        "[IMAGE_PAGE_6_FIG_3]",
+        "[IMAGE_PAGE_6_FIG_4]",
+        "[IMAGE_PAGE_6_FIG_5]",
+        "[IMAGE_PAGE_6_FIG_6]",
+        "[IMAGE_PAGE_6_FIG_7]",
+        "[IMAGE_PAGE_6_FIG_8]",
+        "[IMAGE_PAGE_6_FIG_9]",
+        "[IMAGE_PAGE_6_FIG_10]",
+        "[IMAGE_PAGE_6_FIG_11]",
+        "[IMAGE_PAGE_7_FIG_1]",
+        "[IMAGE_PAGE_7_FIG_2]",
+        "[IMAGE_PAGE_7_FIG_3]",
+        "[IMAGE_PAGE_7_FIG_4]",
+        "[IMAGE_PAGE_7_FIG_5]",
+        "[IMAGE_PAGE_7_FIG_6]",
+        "[IMAGE_PAGE_7_FIG_7]",
+        "[IMAGE_PAGE_7_FIG_8]",
+        "[IMAGE_PAGE_7_FIG_9]",
+        "[IMAGE_PAGE_7_FIG_10]",
+        "[IMAGE_PAGE_7_FIG_11]",
+        "[IMAGE_PAGE_8_FIG_1]",
+        "[IMAGE_PAGE_8_FIG_2]",
+        "[IMAGE_PAGE_8_FIG_3]",
+        "[IMAGE_PAGE_8_FIG_4]",
+        "[IMAGE_PAGE_8_FIG_5]",
+        "[IMAGE_PAGE_8_FIG_6]",
+        "[IMAGE_PAGE_8_FIG_7]",
+        "[IMAGE_PAGE_8_FIG_8]",
+        "[IMAGE_PAGE_8_FIG_9]",
+        "[IMAGE_PAGE_8_FIG_10]",
+        "[IMAGE_PAGE_8_FIG_11]",
+        "[IMAGE_PAGE_9_FIG_1]",
+        "[IMAGE_PAGE_9_FIG_2]",
+        "[IMAGE_PAGE_9_FIG_3]",
+        "[IMAGE_PAGE_9_FIG_4]",
+        "[IMAGE_PAGE_9_FIG_5]",
+        "[IMAGE_PAGE_9_FIG_6]",
+        "[IMAGE_PAGE_9_FIG_7]",
+        "[IMAGE_PAGE_9_FIG_8]",
+        "[IMAGE_PAGE_9_FIG_9]",
+        "[IMAGE_PAGE_9_FIG_10]",
+        "[IMAGE_PAGE_9_FIG_11]"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-05",
+      "title": "Evidence marker idor-rl-18473 confirms cross-branch object access without data extraction beyond",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-285 / CWE-862 Branch Dispatcher token used against admin function",
+        "CWE-285 /",
+        "CWE-862"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "minimal proof.\nBusiness Impact\nA dispatcher could retrieve POD documents and shipment metadata outside assigned branch boundaries, \nexposing consignee details, receiver mobile numbers, delivery timestamps and commercial routing data.\nRecommended \nRemediation\nEnforce object-level authorization on every document retrieval path. Resolve the shipment owner, branch \nand permitted role server-side befor",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_10_FIG_1]",
+        "[IMAGE_PAGE_10_FIG_2]",
+        "[IMAGE_PAGE_10_FIG_3]",
+        "[IMAGE_PAGE_10_FIG_4]",
+        "[IMAGE_PAGE_10_FIG_5]",
+        "[IMAGE_PAGE_10_FIG_6]",
+        "[IMAGE_PAGE_10_FIG_7]",
+        "[IMAGE_PAGE_10_FIG_8]",
+        "[IMAGE_PAGE_10_FIG_9]",
+        "[IMAGE_PAGE_10_FIG_10]",
+        "[IMAGE_PAGE_10_FIG_11]"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-06",
+      "title": "The audit team did not download the final file; validation stopped after job creation and URL issuance.",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-79 Branch Dispatcher and Exception Reviewer",
+        "CWE-79"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "Business Impact\nSuccessful exploitation could expose finance reconciliation data, branch settlement information and \nshipment payment metadata across all branches. It also indicates missing server-side access-control checks \nfor sensitive admin routes.\nRecommended \nRemediation\nImplement centralized authorization middleware for admin and finance routes. Reject non-finance-admin \nroles before job cr",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_11_FIG_1]",
+        "[IMAGE_PAGE_11_FIG_2]",
+        "[IMAGE_PAGE_11_FIG_3]",
+        "[IMAGE_PAGE_11_FIG_4]",
+        "[IMAGE_PAGE_11_FIG_5]",
+        "[IMAGE_PAGE_11_FIG_6]",
+        "[IMAGE_PAGE_11_FIG_7]",
+        "[IMAGE_PAGE_11_FIG_8]",
+        "[IMAGE_PAGE_11_FIG_9]",
+        "[IMAGE_PAGE_11_FIG_10]",
+        "[IMAGE_PAGE_11_FIG_11]"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-07",
+      "title": "Create or update an exception note for SHP-2026-18827 with a harmless proof marker and script-",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-284: Improper Access Control"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "triggering HTML.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "Executed payload against API Endpoint"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-08",
+      "title": "The test used alert(document.domain) only; no session tokens or user data were accessed.",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-89 / CWE-209 Authenticated dispatcher and support users",
+        "CWE-89 /",
+        "CWE-209"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "Business Impact\nAn attacker with note-writing access could execute script in reviewer sessions, perform actions as the victim \nuser, alter displayed shipment data or chain with other weaknesses to increase account takeover risk.\nRecommended \nRemediation\nEncode user-generated content before rendering, use a safe markdown or rich-text sanitizer with an \nallowlist, prohibit inline event handlers, and",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_12_FIG_1]",
+        "[IMAGE_PAGE_12_FIG_2]",
+        "[IMAGE_PAGE_12_FIG_3]",
+        "[IMAGE_PAGE_12_FIG_4]",
+        "[IMAGE_PAGE_12_FIG_5]",
+        "[IMAGE_PAGE_12_FIG_6]",
+        "[IMAGE_PAGE_12_FIG_7]",
+        "[IMAGE_PAGE_12_FIG_8]",
+        "[IMAGE_PAGE_12_FIG_9]",
+        "[IMAGE_PAGE_12_FIG_10]",
+        "[IMAGE_PAGE_12_FIG_11]"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-09",
+      "title": "The audit team stopped at controlled error confirmation and did not attempt data extraction or time-",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-307 / CWE-203 Unauthenticated attacker against known email format",
+        "CWE-307 /",
+        "CWE-203"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "based inference.\nBusiness Impact\nIf exploitable beyond error disclosure, this weakness may allow unauthorized querying of shipment records. \nEven without confirmed extraction, stack traces and SQL fragments assist attackers in crafting targeted \npayloads.\nRecommended \nRemediation\nUse parameterized queries or ORM query builders for all search filters. Return generic error messages to \nusers, log de",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_13_FIG_1]",
+        "[IMAGE_PAGE_13_FIG_2]",
+        "[IMAGE_PAGE_13_FIG_3]",
+        "[IMAGE_PAGE_13_FIG_4]",
+        "[IMAGE_PAGE_13_FIG_5]",
+        "[IMAGE_PAGE_13_FIG_6]",
+        "[IMAGE_PAGE_13_FIG_7]",
+        "[IMAGE_PAGE_13_FIG_8]",
+        "[IMAGE_PAGE_13_FIG_9]",
+        "[IMAGE_PAGE_13_FIG_10]",
+        "[IMAGE_PAGE_13_FIG_11]"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-10",
+      "title": "Send sequential OTP verification attempts at a constrained rate. No lockout or challenge was triggered",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-284: Improper Access Control"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "before a valid proof marker response was observed.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "Executed payload against API Endpoint"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-11",
+      "title": "No password was changed and no account was retained by the audit team.",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-434 / CWE-79 Claims Reviewer",
+        "CWE-434 /",
+        "CWE-79"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "Business Impact\nValid-user discovery combined with weak OTP throttling increases account takeover risk, especially if \nattackers can obtain partial OTPs through social engineering, mailbox compromise or notification leakage.\nRecommended \nRemediation\nReturn uniform reset responses, rate-limit by account, IP, device fingerprint and tenant, implement OTP \nattempt caps, expire OTPs quickly, and alert",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_14_FIG_1]",
+        "[IMAGE_PAGE_14_FIG_2]",
+        "[IMAGE_PAGE_14_FIG_3]",
+        "[IMAGE_PAGE_14_FIG_4]",
+        "[IMAGE_PAGE_14_FIG_5]",
+        "[IMAGE_PAGE_14_FIG_6]",
+        "[IMAGE_PAGE_14_FIG_7]",
+        "[IMAGE_PAGE_14_FIG_8]",
+        "[IMAGE_PAGE_14_FIG_9]",
+        "[IMAGE_PAGE_14_FIG_10]",
+        "[IMAGE_PAGE_14_FIG_11]"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-12",
+      "title": "The audit team confirmed storage and rendering metadata only; no malicious payload or callback was",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-614 / CWE-613 All authenticated users",
+        "CWE-614 /",
+        "CWE-613"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "used.\nBusiness Impact\nActive content in uploaded files can be used for script execution, content spoofing or phishing against claims \nusers, especially if files are rendered inline under a trusted application or CDN domain.\nRecommended \nRemediation\nRestrict upload types to business-required formats, validate content by magic bytes and safe parsers, store \nuser files on a separate cookieless domain",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_15_FIG_1]",
+        "[IMAGE_PAGE_15_FIG_2]",
+        "[IMAGE_PAGE_15_FIG_3]",
+        "[IMAGE_PAGE_15_FIG_4]",
+        "[IMAGE_PAGE_15_FIG_5]",
+        "[IMAGE_PAGE_15_FIG_6]",
+        "[IMAGE_PAGE_15_FIG_7]",
+        "[IMAGE_PAGE_15_FIG_8]",
+        "[IMAGE_PAGE_15_FIG_9]",
+        "[IMAGE_PAGE_15_FIG_10]",
+        "[IMAGE_PAGE_15_FIG_11]"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-13",
+      "title": "The application returns HTTP 200 instead of requiring re-authentication.",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-693 / CWE-209 Unauthenticated and authenticated users",
+        "CWE-693 /",
+        "CWE-209"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "Business Impact\nWeak cookie attributes expose session identifiers to avoidable transport or client-side risks. Long idle \nsessions increase the impact of shared workstations, unattended browsers and stolen cookies.\nRecommended \nRemediation\nSet Secure, HttpOnly and SameSite attributes for session cookies. Implement server-side idle timeout, \nabsolute session lifetime and token rotation after privil",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_16_FIG_1]",
+        "[IMAGE_PAGE_16_FIG_2]",
+        "[IMAGE_PAGE_16_FIG_3]",
+        "[IMAGE_PAGE_16_FIG_4]",
+        "[IMAGE_PAGE_16_FIG_5]",
+        "[IMAGE_PAGE_16_FIG_6]",
+        "[IMAGE_PAGE_16_FIG_7]",
+        "[IMAGE_PAGE_16_FIG_8]",
+        "[IMAGE_PAGE_16_FIG_9]",
+        "[IMAGE_PAGE_16_FIG_10]",
+        "[IMAGE_PAGE_16_FIG_11]"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-14",
+      "title": "Confirm missing Content-Security-Policy, Strict-Transport-Security, X-Frame-Options and Referrer-Policy",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-284: Improper Access Control"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "on tested routes.",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "Executed payload against API Endpoint"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    },
+    {
+      "finding_id": "OBS-15",
+      "title": "The response returns stack trace details and internal controller paths with request ID hdr-rl-227.",
+      "status": "Open",
+      "severity": "High",
+      "cvss_score": null,
+      "cvss_vector": "",
+      "cwe": [
+        "CWE-284: Improper Access Control"
+      ],
+      "affected_asset": [
+        "API Endpoint"
+      ],
+      "observation_description": "Business Impact\nMissing headers increase exposure to clickjacking, script injection impact and downgrade risks. Verbose \nerrors disclose implementation details useful for targeted attacks and reconnaissance.\nRecommended \nRemediation\nDeploy a hardened header baseline at the reverse proxy and application layer. Disable debug error pages in \nUAT/production-like environments, return generic error resp",
+      "preconditions": "Attacker has network access to the API endpoint.",
+      "proof_of_concept_steps": [
+        "[IMAGE_PAGE_17_FIG_1]",
+        "[IMAGE_PAGE_17_FIG_2]",
+        "[IMAGE_PAGE_17_FIG_3]",
+        "[IMAGE_PAGE_17_FIG_4]",
+        "[IMAGE_PAGE_17_FIG_5]",
+        "[IMAGE_PAGE_17_FIG_6]",
+        "[IMAGE_PAGE_17_FIG_7]",
+        "[IMAGE_PAGE_17_FIG_8]",
+        "[IMAGE_PAGE_17_FIG_9]",
+        "[IMAGE_PAGE_17_FIG_10]",
+        "[IMAGE_PAGE_17_FIG_11]"
+      ],
+      "impact": "Potential data compromise and business logic bypass.",
+      "likely_root_cause": "Missing server-side validation and access controls.",
+      "recommendation": "Enforce strict input validation, authorization checks, and server-side encryption.",
+      "reference": "https://owasp.org/www-project-api-security/",
+      "new_or_repeat": "New"
+    }
+  ],
+  "appendices": {
+    "risk_rating_criteria": [
+      {
+        "rating": "Critical",
+        "description": "Vulnerabilities that cause immediate, catastrophic system or business compromise."
+      },
+      {
+        "rating": "High",
+        "description": "Vulnerabilities allowing unauthorized data access, privilege escalation, or business logic bypass."
+      },
+      {
+        "rating": "Medium",
+        "description": "Vulnerabilities requiring specific preconditions but presenting significant risk."
+      },
+      {
+        "rating": "Low",
+        "description": "Minor security flaws, information disclosures, or configuration deviations."
+      }
+    ],
+    "controlled_vocabulary_reference": "CVSS v3.1 / CWE / OWASP API Security",
+    "remediation_roadmap": [],
+    "retest_closure": []
+  },
+  "_meta": {
+    "pipeline_version": "3.0.0-decoupled",
+    "source_file": "4-report.pdf",
+    "structuring_backend": "rule_based",
+    "structuring_model": "Qwen/Qwen3.8-27B"
+  }
+}

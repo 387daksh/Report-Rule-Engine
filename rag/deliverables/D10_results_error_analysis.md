@@ -1,0 +1,9 @@
+# D10 - Results and error analysis
+
+The completed B0 live result achieved answer accuracy 91.67%, macro-F1 60.74%, grounding 100%, retrieval recall@5 100%, and audit score 33.33% (FAIL). One class, Insufficient Evidence, had zero gold support, so macro-F1 is not a reliable safety result.
+
+The CRAG gate marked only 33.33% of retrievals as correct and reformulated 58.33%, indicating that the gate is not yet calibrated. The lexical grounding check is stronger after the adaptive patch because citations must belong to retrieved context. An optional local claim verifier is now implemented, but it and the human-review path require a larger labelled test set for calibration.
+
+The actual Qwen3 retrieval test tied B0 on all retrieval metrics. The GPU Qwen3-0.6B end-to-end run scored 58.33% accuracy and 0.2456 macro-F1, predicted No for all 12 questions, and generated two review flags. The Qwen3-8B Ollama run completed successfully with 100% lexical grounding, 50% CRAG reformulation, 16.67% CRAG correct-retrieval rate, and 33.33% audit score (FAIL); it took approximately 22 minutes because the model was split between CPU and GPU. The results support the architecture's modularity, not a claim that a larger generator alone fixes retrieval or evaluation quality.
+
+The final production-parser run covered 16 pairs across `2-report.json` and `4-report.json`. It achieved 81.25% accuracy, macro-F1 0.4296, grounding 100%, Recall@8 87.50%, Precision@8 14.43%, MRR 0.2781, nDCG@8 0.4212, CRAG correct retrieval 25.00%, CRAG reformulation 68.75%, and mean latency approximately 13.66 seconds. Per-report accuracy was 75.00% for 2-report and 87.50% for 4-report. The remaining failure is calibration: CRAG still labels many relevant retrievals ambiguous, and the benchmark has no Insufficient Evidence support. Audit PASS results (100.00% and 87.50%) should not be over-interpreted because the source-derived question set contains mostly affirmative labels.

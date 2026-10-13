@@ -1,0 +1,35 @@
+# Core pipeline
+sentence-transformers>=3.0.0
+faiss-cpu>=1.8.0
+numpy>=1.26.0
+requests>=2.31.0
+
+# SOTA Hybrid Search & Lexical Retrieval
+rank-bm25>=0.2.2
+
+# Document Understanding & Multimodal Parsing (Docling)
+docling>=2.0.0
+docling-core>=2.0.0
+
+# Optional: precise token counting (falls back to a word-count heuristic
+# automatically if unavailable / no network to fetch the BPE file)
+tiktoken>=0.7.0
+
+# Evaluation / reporting
+pandas>=2.2.0
+
+# Optional modern retrieval paths (only needed when enabled in config)
+transformers>=4.45.0
+torch>=2.2.0
+Pillow>=10.0.0
+colpali-engine>=0.3.0,<0.4.0
+PyMuPDF>=1.24.0
+
+# NOTE: the LLM itself is served by Ollama (https://ollama.com), which is
+# a separate binary, not a pip package. Install Ollama, then:
+#   ollama pull qwen3:8b
+#   ollama pull qwen3:14b
+#   ollama pull llama3.1:8b
+#   ollama pull mistral:7b
+#   ollama serve
+# All model weights and inference then run fully on-device (Sec. 6.5).

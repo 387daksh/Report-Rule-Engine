@@ -1,0 +1,59 @@
+{
+  "device": "cpu",
+  "chunking": {
+    "strategy": "structure_aware",
+    "params": { "max_tokens": 220, "overlap_tokens": 30, "min_tokens": 40 }
+  },
+  "retrieval": {
+    "top_k": 5,
+    "candidates_k": 40,
+    "embed_model": "BAAI/bge-m3",
+    "use_hybrid": true,
+    "use_reranker": true,
+    "reranker_model": "BAAI/bge-reranker-v2-m3",
+    "use_crag": true,
+    "use_hyde": false
+  },
+  "icl": {
+    "strategy": "retrieval_few_shot",
+    "k": 4,
+    "example_bank_path": "sample_data/icl_example_bank.json"
+  },
+  "prompt_version": "v2_evidence_review",
+  "generation": {
+    "model_name": "qwen2.5:7b",
+    "temperature": 0.0,
+    "seed": 42,
+    "num_predict": 512,
+    "top_p": 1.0,
+    "think": false,
+    "use_chat_api": true,
+    "enforce_schema": true
+  },
+  "pass_threshold_pct": 70.0,
+  "benchmark_questions_path": "sample_data/benchmark_questions.json",
+  "audit_reports": [
+    {
+      "report_id": "AR-2026-001",
+      "path": "sample_data/sample_report_001.txt",
+      "gold_labels": {
+        "Q1":  { "answer": "No",  "gold_chunk_ids": ["80928c000ffb"] },
+        "Q2":  { "answer": "Yes", "gold_chunk_ids": ["80928c000ffb", "fead471f3554"] },
+        "Q3":  { "answer": "No",  "gold_chunk_ids": ["80928c000ffb", "fead471f3554"] },
+        "Q4":  { "answer": "Yes", "gold_chunk_ids": ["fead471f3554"] },
+        "Q5":  { "answer": "No",  "gold_chunk_ids": ["fead471f3554"] },
+        "Q6":  { "answer": "Yes", "gold_chunk_ids": ["fead471f3554", "8bb19aa68b94"] },
+        "Q7":  { "answer": "No",  "gold_chunk_ids": ["fead471f3554", "8bb19aa68b94"] },
+        "Q8":  { "answer": "No",  "gold_chunk_ids": ["8bb19aa68b94"] },
+        "Q9":  { "answer": "No",  "gold_chunk_ids": ["8bb19aa68b94", "460d9ff406e3"] },
+        "Q10": { "answer": "No",  "gold_chunk_ids": ["460d9ff406e3"] },
+        "Q11": { "answer": "Yes", "gold_chunk_ids": ["3f1fa16b2fa0"] },
+        "Q12": { "answer": "Yes", "gold_chunk_ids": ["8a01a77197c5"] }
+      }
+    }
+  ],
+  "_notes": [
+    "SOTA Configuration enabled: Hybrid BM25+Dense retrieval, Cross-Encoder reranking, and CRAG retrieval gating.",
+    "gold_chunk_ids above were resolved with StructureAwareChunker(max_tokens=220, overlap_tokens=30)."
+  ]
+}

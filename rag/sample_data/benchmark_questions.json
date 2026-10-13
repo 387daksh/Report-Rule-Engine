@@ -1,0 +1,14 @@
+[
+  {"question_id": "Q1",  "text": "Is multi-factor authentication enforced for all administrative accounts that access production systems?"},
+  {"question_id": "Q2",  "text": "Were at least 90% of critical security patches applied within the organisation's required SLA window during the audit period?"},
+  {"question_id": "Q3",  "text": "Are all production servers running operating system versions that are still within vendor support (i.e. not end-of-life)?"},
+  {"question_id": "Q4",  "text": "Is security-event log retention configured to meet or exceed the organisation's internal minimum retention policy?"},
+  {"question_id": "Q5",  "text": "Is alerting configured to detect anomalous outbound data transfer volumes?"},
+  {"question_id": "Q6",  "text": "Has the incident response plan been reviewed within the organisation's required annual review cycle?"},
+  {"question_id": "Q7",  "text": "Was an incident response tabletop exercise or simulated incident drill conducted within the preceding 12 months?"},
+  {"question_id": "Q8",  "text": "Have all identified high-severity vulnerabilities been remediated within the organisation's internal SLA?"},
+  {"question_id": "Q9",  "text": "Is data encrypted at rest across all storage locations, including offsite backup media?"},
+  {"question_id": "Q10", "text": "Do all active third-party vendor contracts in scope include a data breach notification clause?"},
+  {"question_id": "Q11", "text": "Did the audit scope include the organisation's cloud infrastructure hosted with its primary IaaS provider?"},
+  {"question_id": "Q12", "text": "Was the vulnerability scan performed using an authenticated scanning methodology?"}
+]
