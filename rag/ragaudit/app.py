@@ -142,6 +142,7 @@ class Application:
             max_history_turns=self.settings.chat.max_history_turns,
             rewrite_queries=self.settings.chat.rewrite_queries,
             icl_k=icl_k,
+            generation_k=self.settings.retrieval.generation_k,
         )
 
     def build_ingest(self) -> IngestPipeline:

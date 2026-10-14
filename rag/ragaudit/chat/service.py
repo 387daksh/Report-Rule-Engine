@@ -70,6 +70,7 @@ class ChatService:
         max_history_turns: int = 8,
         rewrite_queries: bool = True,
         icl_k: int = 3,
+        generation_k: int = 8,
     ) -> None:
         self.catalog = catalog
         self.retriever = retriever
@@ -80,6 +81,7 @@ class ChatService:
         self.max_history_turns = max_history_turns
         self.rewrite_queries = rewrite_queries
         self.icl_k = icl_k
+        self.generation_k = generation_k
 
     # -- public ----------------------------------------------------------
 
@@ -184,6 +186,11 @@ class ChatService:
         demos = self.selector.select(search_query, self.icl_k) if self.selector else []
         history = session.history_pairs(self.max_history_turns)
 
+        # Retrieval ran wide for recall; generation sees only the reranked head.
+        # The full list stays on the answer for evaluation, so retrieval quality
+        # is still measured at top_k even though the model reads fewer passages.
+        for_generation = retrieved[: self.generation_k]
+
         # Fit the evidence to the model's context before sending. Without
         # this the server truncates the tail of the prompt -- which is where
         # the response-format instruction lives -- and returns malformed
@@ -193,8 +200,8 @@ class ChatService:
             SYSTEM_PROMPT + question + "".join(d.render(0) for d in demos)
             + "".join(t for _, t in history)
         )
-        retrieved, dropped = fit_evidence_to_budget(retrieved, budget, reserve=fixed_cost)
-        if not retrieved:
+        for_generation, dropped = fit_evidence_to_budget(for_generation, budget, reserve=fixed_cost)
+        if not for_generation:
             logger.error(
                 "prompt budget exhausted before any evidence fit",
                 extra={"trace_id": trace_id, "budget": budget, "fixed_cost": fixed_cost},
@@ -210,7 +217,7 @@ class ChatService:
                 route=plan.route.value,
             )
 
-        prompt = build_chat_prompt(question, retrieved, demos, history)
+        prompt = build_chat_prompt(question, for_generation, demos, history)
 
         try:
             completion = self.llm.chat(
@@ -241,7 +248,14 @@ class ChatService:
                 route=plan.route.value,
             )
 
-        answer = self._build_answer(completion, retrieved, plan)
+        # Citations are verified against what the model was actually shown.
+        # Validating against the wider retrieved list would accept a citation
+        # to a passage the model never saw, which is the fabrication this
+        # check exists to catch.
+        answer = self._build_answer(completion, for_generation, plan)
+        # The full retrieved list is reported for evaluation, so retrieval
+        # recall is still measured at top_k.
+        answer.retrieved = retrieved
         if dropped:
             answer.review_flags.append(f"evidence_trimmed_to_context:{dropped}")
         return answer
@@ -452,25 +466,54 @@ def _parse_json(text: str) -> dict | None:
     return None
 
 
+#: Characters that separate fields in a rendered chunk header. A model that
+#: copies "[OBS-02] Discovery | Severity: High" back as "Discovery, Severity:
+#: High" has quoted faithfully; only the punctuation differs. Comparing at
+#: character level treats that as a rewrite, so separators are flattened
+#: before comparison.
+_SEPARATORS = str.maketrans({c: " " for c in "|,;:[]()\"'`*_-–—/\\"})
+
+
 def _normalise_ws(text: str) -> str:
     return " ".join(text.lower().split())
+
+
+def _tokens(text: str) -> list[str]:
+    return _normalise_ws(text.translate(_SEPARATORS)).split()
 
 
 def _quote_supported(quote: str, source: str) -> bool:
     """Is ``quote`` actually present in ``source``?
 
-    Exact containment after whitespace normalisation is the common case.
-    Otherwise the best matching window of the same length is compared, which
-    tolerates a trimmed clause but not a reworded one.
+    Compared as word sequences with separators flattened, so a faithful copy
+    that differs only in punctuation passes while a quote lifted from a
+    *different* chunk still fails. That distinction is the whole point: the
+    common model failure here is not rewording, it is attributing one chunk's
+    text to another chunk's id.
     """
-    q = _normalise_ws(quote)
-    s = _normalise_ws(source)
-    if not q:
+    q_tokens = _tokens(quote)
+    s_tokens = _tokens(source)
+    if not q_tokens or not s_tokens:
         return False
-    if q in s:
+
+    # Contiguous run of the same words, punctuation ignored.
+    if _is_sublist(q_tokens, s_tokens):
         return True
-    if len(q) > len(s):
+
+    # Otherwise require most of the quote's words to align in order against
+    # the source. Operating on tokens rather than characters means a changed
+    # separator costs nothing while a substituted clause still fails.
+    matcher = difflib.SequenceMatcher(None, q_tokens, s_tokens, autojunk=False)
+    return matcher.ratio() * (len(q_tokens) + len(s_tokens)) / (2 * len(q_tokens)) >= (
+        QUOTE_MATCH_THRESHOLD
+    )
+
+
+def _is_sublist(needle: list[str], haystack: list[str]) -> bool:
+    if len(needle) > len(haystack):
         return False
-    matcher = difflib.SequenceMatcher(None, q, s)
-    match = matcher.find_longest_match(0, len(q), 0, len(s))
-    return (match.size / len(q)) >= QUOTE_MATCH_THRESHOLD
+    first = needle[0]
+    for start in range(len(haystack) - len(needle) + 1):
+        if haystack[start] == first and haystack[start : start + len(needle)] == needle:
+            return True
+    return False

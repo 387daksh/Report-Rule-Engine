@@ -40,6 +40,11 @@ class RetrievalSettings(BaseModel):
     # outperformed 5 and 10; we rerank a wider candidate pool down to this.
     top_k: int = 20
     candidates_k: int = 60
+    # Chunks actually placed in the generation prompt. Retrieval stays wide for
+    # recall, but handing a small model twenty passages makes it try to cover
+    # all of them and run out of output budget mid-answer. The reranked head
+    # carries the signal; the tail mostly adds length.
+    generation_k: int = 8
     rrf_k: int = 60
     # Rank-based, not score-based: fused and cross-encoder scores are not on a
     # common scale, so an absolute cutoff is meaningless. See D05.

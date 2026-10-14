@@ -369,3 +369,111 @@ def test_hybrid_merge_still_runs_with_a_real_predicate(chat_env):
     answer, _ = build(llm).ask("Why were the high-severity findings left open?")
     assert answer.route == "hybrid"
     assert "match" in answer.text  # the structured half contributed
+
+
+# --------------------------------------------------------------------------
+# Quote matching: faithful copies vs cross-attribution
+# --------------------------------------------------------------------------
+#
+# Cases taken from real qwen3:1.7b output. The model copies chunk text back
+# with ' | ' separators rewritten as commas, which a character-level matcher
+# treats as a rewrite and rejects. The failure that must still be caught is
+# different in kind: text lifted from one chunk and attributed to another
+# chunk's id.
+
+
+@pytest.mark.parametrize(
+    "quote,source,label",
+    [
+        (
+            "Discovery, Severity: High, Status: Open, CWE: CWE-284: Improper Access Control",
+            "[OBS-02] Discovery | Severity: High | Status: Open | CWE: CWE-284: Improper "
+            "Access Control | Affected: API Endpoint",
+            "separators rewritten as commas",
+        ),
+        (
+            "Introduction, project background: Conduct comprehensive API assessment",
+            "Introduction: project background: Conduct comprehensive API assessment to "
+            "identify vulnerabilities",
+            "single punctuation character differs",
+        ),
+        (
+            "Evidence marker idor-rl-18473 confirms cross-branch object access",
+            "[OBS-05] Evidence marker idor-rl-18473 confirms cross-branch object access "
+            "without data extraction | Severity: High",
+            "finding-id prefix omitted",
+        ),
+    ],
+)
+def test_faithful_copies_are_accepted_despite_punctuation(quote, source, label):
+    assert _quote_supported(quote, source), label
+
+
+@pytest.mark.parametrize(
+    "quote,source,label",
+    [
+        (
+            "The audit team did not download the final file; validation stopped after job creation",
+            "[OBS-07] Create or update an exception note for SHP-2026-18827 with a harmless "
+            "proof marker | Severity: High | Status: Open",
+            "text belongs to a different finding",
+        ),
+        (
+            "OTP Misconfiguration, Severity: Medium, Status: Open, CWE: CWE-284",
+            "[OBS-14] Confirm missing Content-Security-Policy, Strict-Transport-Security, "
+            "X-Frame-Options | Severity: High",
+            "finding title attributed to the wrong chunk",
+        ),
+        (
+            "All controls were verified as fully effective and compliant",
+            "The admin endpoint did not enforce authorisation checks on token transitions.",
+            "wholly invented",
+        ),
+    ],
+)
+def test_cross_attributed_and_invented_quotes_are_rejected(quote, source, label):
+    assert not _quote_supported(quote, source), label
+
+
+# --------------------------------------------------------------------------
+# Generation window
+# --------------------------------------------------------------------------
+
+
+def test_citations_are_verified_against_what_the_model_saw(chat_env, catalog):
+    """A narrow generation window must narrow the citable set too.
+
+    Retrieval runs wide for recall but the model is shown only the head. A
+    citation naming a retrieved-but-unshown passage is a fabrication, and
+    validating against the full retrieved list would wave it through.
+    """
+    build, _ = chat_env
+    question = "What was found?"
+
+    service = build(FakeLLM(default=_answer_json("placeholder", [])))
+    service.generation_k = 1
+
+    # Ask the retriever directly so the ranking is known, then cite a passage
+    # that falls outside a one-chunk generation window.
+    ranked = service.retriever.retrieve(question)
+    if len(ranked) < 2:
+        pytest.skip("fixture corpus produced fewer than two retrieved chunks")
+    unseen = ranked[-1].chunk
+
+    service.llm = FakeLLM(default=_answer_json(
+        "Grounded in a passage the model was never shown.",
+        [{"chunk_id": unseen.chunk_id, "quote": unseen.quotable_text[:60]}],
+    ))
+    answer, _ = service.ask(question)
+
+    assert all(c.chunk_id != unseen.chunk_id for c in answer.citations)
+    assert any(f.startswith("citation_not_in_evidence") for f in answer.review_flags)
+
+
+def test_full_retrieved_list_is_still_reported_for_evaluation(chat_env):
+    """Trimming the generation window must not shrink retrieval metrics."""
+    build, _ = chat_env
+    service = build(FakeLLM(default=_answer_json("ok", [])))
+    service.generation_k = 1
+    answer, _ = service.ask("access control")
+    assert len(answer.retrieved) > 1, "retrieved list was truncated to the generation window"
