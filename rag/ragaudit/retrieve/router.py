@@ -24,12 +24,17 @@ class Route(str, Enum):
     STRUCTURED = "structured"
     NARRATIVE = "narrative"
     HYBRID = "hybrid"
+    #: Not a question about the reports. Greetings, acknowledgements, and
+    #: "what can you do" are answered directly and never reach retrieval.
+    CHITCHAT = "chitchat"
 
 
 @dataclass
 class QueryPlan:
     route: Route
     reasons: list[str] = field(default_factory=list)
+    #: For CHITCHAT: which kind, so the service can answer appropriately.
+    chitchat_kind: str = ""
     severities: list[str] = field(default_factory=list)
     statuses: list[str] = field(default_factory=list)
     cwe: str | None = None
@@ -110,9 +115,66 @@ STATUS_TERMS = {
 }
 
 
+#: Inputs that are not questions about the reports. Matched against the WHOLE
+#: input, so "hey, how many findings are open?" still routes normally -- only
+#: a bare greeting is intercepted.
+_GREETING = re.compile(
+    r"^(hi|hey+|hello+|yo|hiya|howdy|sup|greetings|good\s+(morning|afternoon|evening|day))"
+    r"[\s!.,?]*(there|everyone|team)?[\s!.,?]*$",
+    re.I,
+)
+_ACK = re.compile(
+    r"^(thanks?|thank\s+you|thx|ty|ok(ay)?|cool|nice|great|got\s+it|understood|"
+    r"perfect|sure|alright|fine|yep|yes|no|nope|k)[\s!.,]*$",
+    re.I,
+)
+_FAREWELL = re.compile(r"^(bye|goodbye|cya|see\s+you|later|good\s*night)[\s!.,]*$", re.I)
+_CAPABILITY = re.compile(
+    r"^(help|/?help|what\s+can\s+you\s+do|what\s+do\s+you\s+do|who\s+are\s+you|"
+    r"what\s+is\s+this|what'?s\s+this|how\s+do(es)?\s+(this|you)\s+work|"
+    r"what\s+(reports?|data)\s+do\s+you\s+have|commands?)[\s!.,?]*$",
+    re.I,
+)
+
+#: A question needs at least one word that could refer to report content.
+#: Without this, a stray token routes to retrieval and the model is handed
+#: evidence it must say something about.
+_CONTENT_WORD = re.compile(r"[A-Za-z]{3,}")
+
+
+def _chitchat_kind(q: str) -> str:
+    """Classify a non-question input, or return '' if it is a real question."""
+    if _CAPABILITY.match(q):
+        return "capability"
+    if _GREETING.match(q):
+        return "greeting"
+    if _ACK.match(q):
+        return "acknowledgement"
+    if _FAREWELL.match(q):
+        return "farewell"
+    # Nothing substantive to search for: no word long enough to name anything
+    # in a report.
+    if not _CONTENT_WORD.search(q):
+        return "empty"
+    return ""
+
+
 def route_query(question: str) -> QueryPlan:
     """Classify one question into a retrieval plan."""
     q = question.strip()
+
+    # Checked first, and against the whole input. A greeting handed to
+    # retrieval returns arbitrary chunks, and a model told to answer from
+    # evidence will produce a confident summary of whatever it was given --
+    # an answer to a question nobody asked.
+    kind = _chitchat_kind(q)
+    if kind:
+        return QueryPlan(
+            route=Route.CHITCHAT,
+            reasons=[f"input is {kind}, not a question about the reports"],
+            chitchat_kind=kind,
+        )
+
     plan = QueryPlan(route=Route.NARRATIVE)
 
     for term, severity in (

@@ -477,3 +477,64 @@ def test_full_retrieved_list_is_still_reported_for_evaluation(chat_env):
     service.generation_k = 1
     answer, _ = service.ask("access control")
     assert len(answer.retrieved) > 1, "retrieved list was truncated to the generation window"
+
+
+# --------------------------------------------------------------------------
+# Non-questions
+# --------------------------------------------------------------------------
+
+
+def test_greeting_is_answered_without_calling_the_model(chat_env):
+    """No retrieval, no generation, no citations.
+
+    Presenting evidence alongside a reply to "hey" would imply the reply was
+    grounded in the reports, which it cannot be.
+    """
+    build, _ = chat_env
+    llm = FakeLLM(default=_answer_json("SHOULD NOT BE CALLED", []))
+    answer, _ = build(llm).ask("hey")
+
+    assert answer.route == "chitchat"
+    assert llm.calls == [], "the model was invoked for a greeting"
+    assert answer.citations == []
+    assert answer.figures == []
+    assert "SHOULD NOT BE CALLED" not in answer.text
+
+
+def test_greeting_reply_orients_the_user(chat_env):
+    build, _ = chat_env
+    answer, _ = build(FakeLLM()).ask("hey")
+    lowered = answer.text.lower()
+    assert "audit report" in lowered
+    assert "cwe-284" in lowered or "how many" in lowered, "no example questions offered"
+    assert "2-REPORT" in answer.text or "R1" in answer.text, "indexed reports not named"
+
+
+def test_capability_question_is_answered_directly(chat_env):
+    build, _ = chat_env
+    llm = FakeLLM()
+    answer, _ = build(llm).ask("what can you do")
+    assert answer.route == "chitchat"
+    assert llm.calls == []
+    assert "not_a_report_question:capability" in answer.review_flags
+
+
+def test_acknowledgement_gets_a_short_reply(chat_env):
+    build, _ = chat_env
+    answer, _ = build(FakeLLM()).ask("thanks")
+    assert answer.route == "chitchat"
+    assert len(answer.text) < 160
+
+
+def test_a_real_question_still_reaches_the_model(chat_env):
+    """Guard against the chitchat check swallowing genuine questions."""
+    build, catalog = chat_env
+    rows = catalog.all_chunks()
+    llm = FakeLLM(default=_answer_json(
+        "Authorisation was not enforced.",
+        [{"chunk_id": rows[0]["chunk_id"],
+          "quote": "The admin endpoint did not enforce authorisation checks."}],
+    ))
+    answer, _ = build(llm).ask("What access control weaknesses were identified?")
+    assert answer.route != "chitchat"
+    assert llm.calls, "the model was not called for a real question"

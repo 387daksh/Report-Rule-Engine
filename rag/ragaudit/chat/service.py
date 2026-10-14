@@ -112,7 +112,9 @@ class ChatService:
             },
         )
 
-        if plan.route is Route.STRUCTURED:
+        if plan.route is Route.CHITCHAT:
+            answer = self._chitchat_answer(plan, scope)
+        elif plan.route is Route.STRUCTURED:
             answer = self.structured.answer(search_query, plan, report_ids=scope)
         else:
             answer = self._narrative_answer(question, search_query, plan, session, scope, trace_id)
@@ -124,6 +126,69 @@ class ChatService:
         answer.route = plan.route.value
         self.sessions.append(session, Turn(question=question, answer=answer))
         return answer, session
+
+    # -- non-questions ---------------------------------------------------
+
+    def _chitchat_answer(self, plan, scope: Sequence[str] | None) -> Answer:
+        """Answer a greeting or a capability question without retrieving.
+
+        Deliberately has no citations and no evidence: there is nothing in the
+        reports that answers "hey", and presenting retrieved passages here
+        would imply the reply was grounded in them.
+        """
+        kind = plan.chitchat_kind
+
+        if kind in {"acknowledgement", "farewell"}:
+            text = "Happy to help. Ask me anything else about the reports."
+        else:
+            text = self._orientation(scope)
+
+        return Answer(
+            text=text,
+            route=Route.CHITCHAT.value,
+            abstained=False,
+            review_flags=[f"not_a_report_question:{kind}"],
+        )
+
+    def _orientation(self, scope: Sequence[str] | None) -> str:
+        """Describe what is indexed and what can be asked of it."""
+        try:
+            report_ids = list(scope) if scope else self.catalog.report_ids()
+            stats = self.catalog.stats()
+        except Exception:  # orientation must never be the thing that breaks
+            report_ids, stats = [], {}
+
+        lines = [
+            "I answer questions about the cybersecurity audit reports indexed here, "
+            "and cite the passage behind every claim."
+        ]
+
+        if report_ids:
+            titles = []
+            for report_id in report_ids[:5]:
+                meta = self.catalog.get_report_meta(report_id)
+                titles.append(f"  - {report_id}: {meta.title}" if meta and meta.title else f"  - {report_id}")
+            more = f"\n  ... and {len(report_ids) - 5} more" if len(report_ids) > 5 else ""
+            lines.append(
+                f"\nIndexed ({stats.get('findings', 0)} findings across "
+                f"{len(report_ids)} report(s)):\n" + "\n".join(titles) + more
+            )
+
+        lines.append(
+            "\nThings you can ask:\n"
+            "  - How many high-severity findings are still open?\n"
+            "  - Are all findings closed?\n"
+            "  - Which findings cite CWE-284?\n"
+            "  - What access control weaknesses were identified?\n"
+            "  - What remediation was recommended for the token API issue?\n"
+            "  - Show me the proof of concept for a finding"
+        )
+        lines.append(
+            "\nCounts and lookups are answered exactly from the report fields. "
+            "Open-ended questions are answered from the report text, with citations. "
+            "If the reports do not cover something, I will say so rather than guess."
+        )
+        return "\n".join(lines)
 
     # -- query resolution ------------------------------------------------
 

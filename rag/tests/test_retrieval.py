@@ -281,3 +281,51 @@ def test_hybrid_retriever_respects_scope(loaded, index, embedder):
     retriever = HybridRetriever(loaded, index, embedder, config=RetrievalConfig(top_k=5))
     assert retriever.retrieve("authorisation", report_ids=[]) == []
     assert all(r.chunk.report_id == "R1" for r in retriever.retrieve("authorisation", report_ids=["R1"]))
+
+
+# --------------------------------------------------------------------------
+# Non-questions
+# --------------------------------------------------------------------------
+#
+# Reported from the demo console: typing "hey" routed to narrative, retrieved
+# arbitrary chunks, and the model -- told to answer from the evidence it was
+# handed -- produced a confident summary of access-control findings with
+# citations. An answer to a question nobody asked is worse than no answer.
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["hey", "hi", "Hello there!", "yo", "good morning", "howdy",
+     "thanks", "thank you", "ok", "okay", "cool", "got it",
+     "bye", "see you", "good night",
+     "help", "what can you do", "who are you?", "what is this",
+     "???", "   ", "!!"],
+)
+def test_non_questions_never_reach_retrieval(text):
+    assert route_query(text).route is Route.CHITCHAT
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "hey how many findings are open?",
+        "hi, which findings cite CWE-284?",
+        "thanks - what did the report recommend?",
+        "ok so what access control issues were found?",
+        "yes it was closed, which ones?",
+        "no rate limiting findings?",
+    ],
+)
+def test_a_greeting_prefix_does_not_swallow_a_real_question(text):
+    """Only a bare greeting is intercepted; the whole input is matched."""
+    assert route_query(text).route is not Route.CHITCHAT
+
+
+def test_chitchat_plan_says_why_and_what_kind():
+    plan = route_query("hey")
+    assert plan.chitchat_kind == "greeting"
+    assert plan.reasons and "not a question" in plan.reasons[0]
+
+    assert route_query("what can you do").chitchat_kind == "capability"
+    assert route_query("thanks").chitchat_kind == "acknowledgement"
+    assert route_query("bye").chitchat_kind == "farewell"
