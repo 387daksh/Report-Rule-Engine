@@ -1,25 +1,63 @@
 # Running the demo
 
-Three commands. Everything runs locally; nothing leaves the machine.
+## One command
 
-```bash
+```
+run.bat
+```
+
+Double-click it, or run it from a terminal in this folder. It finds a Python
+with the dependencies, starts Ollama if it is not already up, pulls the model
+on first run, ingests the corpus if the index is empty, then starts the
+console and opens the browser.
+
+On Linux or macOS, or in Git Bash: `./run.sh`
+
+| Command | What it does |
+|---|---|
+| `run.bat` | Start everything, open http://localhost:8077 |
+| `run.bat demo` | Scripted walkthrough in the terminal |
+| `run.bat chat` | Interactive session in the terminal |
+| `run.bat check` | Report what is ready, change nothing |
+| `run.bat ingest` | Re-ingest the corpus |
+| `run.bat test` | Run the test suite |
+
+Stop the server with Ctrl-C.
+
+---
+
+## Doing it by hand
+
+If you would rather drive each step yourself, or `run.bat` fails and you want
+to see where:
+
+```bat
 cd E:\DTU-MEITY\rag
 set PY=C:\Users\hp\AppData\Local\Programs\Python\Python310\python.exe
+set RAGAUDIT_GENERATION__MODEL_NAME=qwen3:1.7b
+set RAGAUDIT_RERANKER__ENABLED=false
 
-# 1. Start the model server (leave running in its own terminal)
+REM 1. Model server, in its own terminal
 "%LOCALAPPDATA%\Programs\Ollama\ollama.exe" serve
 
-# 2. Check everything is wired up
-set RAGAUDIT_GENERATION__MODEL_NAME=qwen3:1.7b
+REM 2. First run only, about 1.4 GB
+"%LOCALAPPDATA%\Programs\Ollama\ollama.exe" pull qwen3:1.7b
+
+REM 3. Check everything is wired up
 %PY% -m ragaudit.cli demo check
 
-# 3. Start the console
+REM 4. Ingest, if var\index is empty
+%PY% -m ragaudit.cli demo setup
+
+REM 5. Start the console
 %PY% -m ragaudit.cli serve --port 8077
 ```
 
 Then open **http://localhost:8077**.
 
-If the index is empty, ingest first: `%PY% -m ragaudit.cli demo setup`.
+Use the interpreter the packages were installed into, which is not
+necessarily the first `python` on PATH — that is the one thing `run.bat`
+resolves for you that is easy to get wrong by hand.
 
 ---
 
