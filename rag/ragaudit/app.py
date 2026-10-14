@@ -97,6 +97,7 @@ class Application:
                 max_tokens=cfg.max_tokens,
                 top_p=cfg.top_p,
                 think=cfg.think,
+                context_tokens=cfg.context_tokens,
                 timeout_s=cfg.timeout_s,
                 connect_timeout_s=cfg.connect_timeout_s,
                 max_retries=cfg.max_retries,

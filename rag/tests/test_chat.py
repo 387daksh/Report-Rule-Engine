@@ -330,3 +330,42 @@ def test_answer_carries_a_trace_id(chat_env):
     answer, _ = build(FakeLLM()).ask("anything")
     assert answer.trace_id
     assert answer.latency_s >= 0
+
+
+# --------------------------------------------------------------------------
+# Hybrid merge
+# --------------------------------------------------------------------------
+
+
+def test_figure_request_does_not_prepend_every_finding(chat_env):
+    """A hybrid route with no field predicate must not dump the whole table.
+
+    Regression found in the demo walkthrough: "show me the proof of concept"
+    routes hybrid for figures, and the structured half -- having nothing to
+    filter on -- prefixed the answer with all 22 findings.
+    """
+    build, catalog = chat_env
+    rows = [r for r in catalog.all_chunks() if r["finding_id"] == "OBS-01"]
+    llm = FakeLLM(default=_answer_json(
+        "The proof of concept is in OBS-01.",
+        [{"chunk_id": rows[0]["chunk_id"],
+          "quote": "The admin endpoint did not enforce authorisation checks."}],
+    ))
+    answer, _ = build(llm).ask("Show me the proof of concept for the access control finding")
+
+    assert answer.route == "hybrid"
+    assert "finding(s) match any finding" not in answer.text
+    assert "OBS-02" not in answer.text
+
+
+def test_hybrid_merge_still_runs_with_a_real_predicate(chat_env):
+    build, catalog = chat_env
+    rows = [r for r in catalog.all_chunks() if r["finding_id"] == "OBS-01"]
+    llm = FakeLLM(default=_answer_json(
+        "They were accepted as residual risk.",
+        [{"chunk_id": rows[0]["chunk_id"],
+          "quote": "The admin endpoint did not enforce authorisation checks."}],
+    ))
+    answer, _ = build(llm).ask("Why were the high-severity findings left open?")
+    assert answer.route == "hybrid"
+    assert "match" in answer.text  # the structured half contributed

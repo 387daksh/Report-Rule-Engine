@@ -47,6 +47,11 @@ class Completion:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     attempts: int = 1
+    #: True when generation stopped because it hit the token cap rather
+    #: than because the model finished. A truncated structured response is
+    #: unparseable, and 'ran out of room' is a far more actionable
+    #: diagnosis than 'malformed output'.
+    truncated: bool = False
 
 
 class _CircuitBreaker:
@@ -93,9 +98,10 @@ class OllamaClient:
         *,
         temperature: float = 0.0,
         seed: int = 42,
-        max_tokens: int = 1024,
+        max_tokens: int = 2048,
         top_p: float = 1.0,
         think: bool = False,
+        context_tokens: int = 16384,
         timeout_s: float = 120.0,
         connect_timeout_s: float = 5.0,
         max_retries: int = 3,
@@ -111,6 +117,7 @@ class OllamaClient:
         self.max_tokens = max_tokens
         self.top_p = top_p
         self.think = think
+        self.context_tokens = context_tokens
         self.timeout = (connect_timeout_s, timeout_s)
         self.max_retries = max_retries
         self.backoff_base_s = backoff_base_s
@@ -136,13 +143,16 @@ class OllamaClient:
         if format_schema:
             payload["format"] = format_schema
         data, latency, attempts = self._post("/api/chat", payload)
+        limit = max_tokens or self.max_tokens
+        produced = int(data.get("eval_count") or 0)
         return Completion(
             text=(data.get("message") or {}).get("content", "").strip(),
             latency_s=latency,
             model=self.model_name,
             prompt_tokens=int(data.get("prompt_eval_count") or 0),
-            completion_tokens=int(data.get("eval_count") or 0),
+            completion_tokens=produced,
             attempts=attempts,
+            truncated=produced >= limit,
         )
 
     def generate(
@@ -164,13 +174,16 @@ class OllamaClient:
         if format_schema:
             payload["format"] = format_schema
         data, latency, attempts = self._post("/api/generate", payload)
+        limit = max_tokens or self.max_tokens
+        produced = int(data.get("eval_count") or 0)
         return Completion(
             text=data.get("response", "").strip(),
             latency_s=latency,
             model=self.model_name,
             prompt_tokens=int(data.get("prompt_eval_count") or 0),
-            completion_tokens=int(data.get("eval_count") or 0),
+            completion_tokens=produced,
             attempts=attempts,
+            truncated=produced >= limit,
         )
 
     def health(self) -> bool:
@@ -191,7 +204,14 @@ class OllamaClient:
             "seed": self.seed,
             "num_predict": max_tokens or self.max_tokens,
             "top_p": self.top_p,
+            # Explicit, because the server default silently truncates.
+            "num_ctx": self.context_tokens,
         }
+
+    @property
+    def prompt_budget_tokens(self) -> int:
+        """Tokens available for the prompt, leaving room for the response."""
+        return max(512, self.context_tokens - self.max_tokens - 256)
 
     def _post(self, path: str, payload: dict[str, Any]) -> tuple[dict[str, Any], float, int]:
         if self._breaker.is_open:

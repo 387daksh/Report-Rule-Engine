@@ -55,7 +55,12 @@ class GenerationSettings(BaseModel):
     model_name: str = "qwen3:8b"
     temperature: float = 0.0
     seed: int = 42
-    max_tokens: int = 1024
+    max_tokens: int = 2048
+    # Ollama defaults num_ctx to 4096 and silently truncates anything longer,
+    # which drops the tail of the prompt -- including the response-format
+    # instruction -- and yields malformed output with no error. Always set it
+    # explicitly, and keep the prompt budget below it. See D03.
+    context_tokens: int = 16384
     top_p: float = 1.0
     think: bool = False
     timeout_s: float = 120.0

@@ -13,8 +13,10 @@ import logging
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 from ragaudit.app import Application
 from ragaudit.observability import new_trace_id
@@ -89,6 +91,20 @@ def create_app(application: Application | None = None) -> FastAPI:
     if application is not None:
         global _app_singleton
         _app_singleton = application
+
+    @api.get("/", response_class=HTMLResponse)
+    def index() -> HTMLResponse:
+        """The demo console.
+
+        Served from this package rather than a separate front-end build so the
+        whole system starts with one command in an air-gapped environment.
+        """
+        page = STATIC_DIR / "index.html"
+        if not page.exists():
+            return HTMLResponse(
+                "<p>UI assets are missing. The API still works; see /docs.</p>", status_code=200
+            )
+        return HTMLResponse(page.read_text(encoding="utf-8"))
 
     @api.get("/healthz")
     def healthz() -> dict:

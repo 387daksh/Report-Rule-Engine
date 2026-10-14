@@ -30,6 +30,8 @@ from ragaudit.generate.prompts import (
     SYSTEM_PROMPT,
     build_chat_prompt,
     build_rewrite_prompt,
+    estimate_tokens,
+    fit_evidence_to_budget,
 )
 from ragaudit.retrieve.hybrid import HybridRetriever
 from ragaudit.retrieve.router import Route, route_query
@@ -180,9 +182,35 @@ class ChatService:
             )
 
         demos = self.selector.select(search_query, self.icl_k) if self.selector else []
-        prompt = build_chat_prompt(
-            question, retrieved, demos, session.history_pairs(self.max_history_turns)
+        history = session.history_pairs(self.max_history_turns)
+
+        # Fit the evidence to the model's context before sending. Without
+        # this the server truncates the tail of the prompt -- which is where
+        # the response-format instruction lives -- and returns malformed
+        # output with no error anywhere (D03).
+        budget = getattr(self.llm, "prompt_budget_tokens", 8192)
+        fixed_cost = estimate_tokens(
+            SYSTEM_PROMPT + question + "".join(d.render(0) for d in demos)
+            + "".join(t for _, t in history)
         )
+        retrieved, dropped = fit_evidence_to_budget(retrieved, budget, reserve=fixed_cost)
+        if not retrieved:
+            logger.error(
+                "prompt budget exhausted before any evidence fit",
+                extra={"trace_id": trace_id, "budget": budget, "fixed_cost": fixed_cost},
+            )
+            return Answer(
+                text=(
+                    "The evidence for that question does not fit in the model's context window. "
+                    "Narrow the question, or configure a model with a larger context."
+                ),
+                abstained=True,
+                abstention_reason="prompt_budget_exhausted",
+                review_flags=["prompt_budget_exhausted"],
+                route=plan.route.value,
+            )
+
+        prompt = build_chat_prompt(question, retrieved, demos, history)
 
         try:
             completion = self.llm.chat(
@@ -213,18 +241,36 @@ class ChatService:
                 route=plan.route.value,
             )
 
-        return self._build_answer(completion, retrieved, plan)
+        answer = self._build_answer(completion, retrieved, plan)
+        if dropped:
+            answer.review_flags.append(f"evidence_trimmed_to_context:{dropped}")
+        return answer
 
     def _build_answer(self, completion, retrieved: list[RetrievedChunk], plan) -> Answer:
         parsed = _parse_json(completion.text)
         flags: list[str] = []
 
         if parsed is None:
+            # Distinguish "ran out of room" from "produced nonsense". The first
+            # is a configuration problem with an obvious fix; reporting both as
+            # a parse failure hides that.
+            truncated = getattr(completion, "truncated", False)
+            reason = "truncated_generation" if truncated else "unparseable_model_output"
+            text = (
+                "The answer was cut off before it finished. Raise generation.max_tokens, "
+                "or ask a narrower question."
+                if truncated
+                else "I could not produce a well-formed answer from the retrieved evidence."
+            )
+            logger.warning(
+                "model output could not be parsed",
+                extra={"reason": reason, "completion_tokens": completion.completion_tokens},
+            )
             return Answer(
-                text="I could not produce a well-formed answer from the retrieved evidence.",
+                text=text,
                 abstained=True,
-                abstention_reason="unparseable_model_output",
-                review_flags=["unparseable_model_output"],
+                abstention_reason=reason,
+                review_flags=[reason],
                 retrieved=retrieved,
                 model=completion.model,
                 route=plan.route.value,
@@ -345,7 +391,17 @@ class ChatService:
         Where a question has both a field predicate and a judgement component,
         the counts come from SQL and the interpretation from the model, so the
         numbers are never the model's to invent.
+
+        Only runs when there is an actual predicate to evaluate. A figure
+        request routes hybrid without one, and merging there would prepend an
+        unfiltered dump of every finding to an otherwise focused answer.
         """
+        has_predicate = bool(
+            plan.severities or plan.statuses or plan.cwe or plan.cve or plan.wants_count
+        )
+        if not has_predicate:
+            return answer
+
         try:
             structured = self.structured.answer(question, plan, report_ids=scope)
         except Exception as exc:

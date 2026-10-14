@@ -53,7 +53,10 @@ ANSWER_SCHEMA: dict[str, Any] = {
     "properties": {
         "evidence_review": {
             "type": "string",
-            "description": "Brief note on which passages bear on the question and which do not.",
+            "description": (
+                "At most two sentences naming which passages bear on the question. "
+                "Do not restate their contents; the answer field carries the substance."
+            ),
         },
         "answer": {
             "type": "string",
@@ -138,6 +141,38 @@ def format_evidence(chunks: Sequence[Any]) -> str:
     return "\n\n---\n\n".join(blocks)
 
 
+def estimate_tokens(text: str) -> int:
+    """Cheap upper-ish estimate. Deliberately conservative.
+
+    A real tokenizer would be exact but costs a model load in a path that
+    runs per request. Over-estimating trims one chunk too many, which is the
+    safe direction: the alternative is the server truncating the tail of the
+    prompt, taking the response-format instruction with it.
+    """
+    return len(text) // 3
+
+
+def fit_evidence_to_budget(
+    chunks: Sequence[Any], budget_tokens: int, *, reserve: int = 0
+) -> tuple[list[Any], int]:
+    """Keep the highest-ranked chunks that fit. Returns (kept, dropped).
+
+    Chunks arrive ranked, so dropping from the tail discards the least
+    relevant evidence first. The count of dropped chunks is returned rather
+    than logged and forgotten, so the caller can surface it on the answer.
+    """
+    kept: list[Any] = []
+    used = reserve
+    for item in chunks:
+        chunk = getattr(item, "chunk", item)
+        cost = estimate_tokens(chunk.quotable_text) + 40  # header and separator
+        if kept and used + cost > budget_tokens:
+            break
+        used += cost
+        kept.append(item)
+    return kept, len(chunks) - len(kept)
+
+
 def build_chat_prompt(
     question: str,
     chunks: Sequence[Any],
@@ -162,7 +197,10 @@ def build_chat_prompt(
     parts.append(f"Evidence:\n{format_evidence(chunks)}\n")
     parts.append(
         "Respond with a single JSON object matching the required schema. "
-        "Write evidence_review first, then the answer, then the citations you actually used."
+        "Write evidence_review first (at most two sentences, naming chunk ids only), "
+        "then the answer, then the citations you actually used. "
+        "Keep the whole response under 400 words so it is not cut off mid-object, "
+        "and cite at most six passages."
     )
     return "\n".join(parts)
 

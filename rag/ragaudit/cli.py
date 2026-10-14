@@ -243,6 +243,50 @@ def cmd_status(args: argparse.Namespace) -> int:
         app.close()
 
 
+def cmd_demo(args: argparse.Namespace) -> int:
+    """Prepare or run the demo walkthrough."""
+    from ragaudit.demo import check_environment, run_script, write_transcript
+
+    settings = load_settings()
+
+    if args.action == "check":
+        _print(check_environment(settings))
+        return 0
+
+    if args.action == "setup":
+        report = check_environment(settings)
+        _print(report)
+        missing = [k for k, v in report.items() if isinstance(v, str) and v.startswith(("MISSING", "UNREACHABLE"))]
+        if missing:
+            print(f"\nNot ready: {', '.join(missing)}", file=sys.stderr)
+            print("Ingest will still run if the embedding weights are present.", file=sys.stderr)
+
+        app = Application(settings)
+        try:
+            pipeline = app.build_ingest()
+            paths = discover_reports(Path(args.corpus))
+            if not paths:
+                print(f"no reports found under {args.corpus}", file=sys.stderr)
+                return 1
+            result = pipeline.ingest_paths(paths, force=args.force)
+            pipeline.save_index(settings.index_dir)
+            _print({"ingest": result.summary(), "catalog": app.catalog.stats()})
+            return 0
+        finally:
+            app.close()
+
+    app = Application(settings)
+    try:
+        chat = app.build_chat(icl_strategy=args.icl)
+        results = run_script(chat, pause=args.pause)
+        if args.transcript:
+            write_transcript(results, Path(args.transcript))
+            print(f"\ntranscript written to {args.transcript}")
+        return 0
+    finally:
+        app.close()
+
+
 def cmd_evaluate(args: argparse.Namespace) -> int:
     from ragaudit.eval.harness import run_evaluation
 
@@ -316,6 +360,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("status", help="readiness of every component")
     p.set_defaults(func=cmd_status)
+
+    p = sub.add_parser("demo", help="prepare or run the scripted walkthrough")
+    p.add_argument("action", choices=["check", "setup", "run"],
+                   help="check: report readiness. setup: check then ingest. run: scripted questions")
+    p.add_argument("--corpus", default="sample_data", help="reports to ingest during setup")
+    p.add_argument("--force", action="store_true")
+    p.add_argument("--pause", type=float, default=0.0, help="seconds between questions when presenting")
+    p.add_argument("--transcript", help="write the run to this JSON file")
+    p.add_argument("--icl", default="fixed_few_shot",
+                   choices=["zero_shot", "fixed_few_shot", "retrieval_few_shot"])
+    p.set_defaults(func=cmd_demo)
 
     p = sub.add_parser("evaluate", help="run the evaluation harness")
     p.add_argument("--questions", required=True)
