@@ -105,6 +105,18 @@ case "${1:-serve}" in
     exec "$PY" -m pytest tests -q
     ;;
   serve|*)
+    # Common after Ctrl-C: the socket is still held, or an earlier instance
+    # is up. Distinguish "our server is already running" from "something else
+    # owns this port" rather than letting uvicorn fail on bind.
+    if curl -s -o /dev/null --max-time 2 "http://localhost:$PORT/healthz"; then
+      printf '\n  [ok] already running on port %s - open http://localhost:%s\n\n' "$PORT" "$PORT"
+      exit 0
+    fi
+    if command -v netstat >/dev/null 2>&1 && netstat -an 2>/dev/null | grep -qE "[:.]$PORT .*LISTEN"; then
+      printf '\n  [!] Port %s is in use by something that is not this app.\n' "$PORT"
+      printf '      Use another:  PORT=%s ./run.sh\n\n' "$((PORT + 1))"
+      exit 1
+    fi
     printf '\n  Console:  http://localhost:%s\n  Stop:     Ctrl-C\n\n' "$PORT"
     exec "$PY" -m ragaudit.cli serve --port "$PORT"
     ;;

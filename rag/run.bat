@@ -14,8 +14,9 @@ REM ---------------------------------------------------------------------
 setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 
-set "PORT=8077"
-set "MODEL=qwen3:1.7b"
+REM Both overridable:  set PORT=8078 && run.bat
+if not defined PORT  set "PORT=8077"
+if not defined MODEL set "MODEL=qwen3:1.7b"
 
 REM --- generation settings -------------------------------------------
 REM The reranker is a 0.6B cross-encoder scoring 60 candidates, which is
@@ -144,6 +145,37 @@ echo.
 exit /b %errorlevel%
 
 :serve
+REM --- is the port already taken? -------------------------------------
+REM Common after Ctrl-C: Windows holds the socket briefly, or an earlier
+REM instance is still up. Distinguish "our server is already running" from
+REM "something else owns this port" and act accordingly, rather than letting
+REM uvicorn fail with WinError 10048.
+curl -s -o nul --max-time 2 http://localhost:%PORT%/healthz 2>nul
+if not errorlevel 1 (
+  echo.
+  echo  [ok] already running on port %PORT% - opening it
+  echo.
+  start http://localhost:%PORT%
+  exit /b 0
+)
+
+netstat -ano | findstr /R /C:":%PORT% .*LISTENING" >nul 2>&1
+if not errorlevel 1 (
+  echo.
+  echo  [X] Port %PORT% is in use by something that is not this app.
+  for /f "tokens=5" %%A in ('netstat -ano ^| findstr /R /C:":%PORT% .*LISTENING"') do (
+    for /f "tokens=1,2" %%B in ('tasklist /fi "PID eq %%A" /fo table /nh 2^>nul') do (
+      echo      PID %%A  ^(%%B^)
+    )
+  )
+  set /a "NEXTPORT=%PORT%+1"
+  echo.
+  echo      Free it:        taskkill /PID ^<pid^> /F
+  echo      Or use another: set PORT=!NEXTPORT! ^&^& run.bat
+  echo.
+  exit /b 1
+)
+
 echo.
 echo  Console:  http://localhost:%PORT%
 echo  Stop:     Ctrl-C

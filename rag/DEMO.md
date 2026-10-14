@@ -206,3 +206,24 @@ set RAGAUDIT_RERANKER__DEVICE=cuda
 
 Answer quality improves noticeably; the 1.7B model tends to list finding ids
 where a larger one explains them.
+
+---
+
+## Port already in use
+
+`run.bat` checks the port before starting, so `WinError 10048` should not
+reach you. What it does:
+
+| Situation | What happens |
+|---|---|
+| Port free | Starts normally |
+| This app already running there | Opens the browser, exits 0 |
+| Something else on that port | Names the PID and process, suggests the next port, exits 1 |
+
+```bat
+set PORT=8078 && run.bat     REM use a different port
+taskkill /PID <pid> /F       REM or free the one you want
+```
+
+A stale server from an earlier run is the usual cause. Ctrl-C in its window
+releases the port.
