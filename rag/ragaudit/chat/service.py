@@ -544,7 +544,12 @@ def _normalise_ws(text: str) -> str:
 
 
 def _tokens(text: str) -> list[str]:
-    return _normalise_ws(text.translate(_SEPARATORS)).split()
+    # Sentence punctuation is stripped from token EDGES only, not treated as a
+    # separator: a model quoting a partial sentence ("...token endpoint") must
+    # match a source ending "...token endpoint.", while an internal dot in
+    # "CVE-2024-1234" or "3.5" stays intact.
+    raw = _normalise_ws(text.translate(_SEPARATORS)).split()
+    return [t.strip(".?!") for t in raw if t.strip(".?!")]
 
 
 def _quote_supported(quote: str, source: str) -> bool:
