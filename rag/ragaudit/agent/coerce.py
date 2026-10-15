@@ -49,6 +49,12 @@ def coerce_list(value: Any) -> list[str]:
     return [as_str(value)]
 
 
+#: Words the model uses to mean "no scope / every report". Treated as absence
+#: of a filter, not as a report to resolve — the agent reaches for "all" or
+#: "all reports" constantly and must not error on it.
+_ALL_SENTINELS = {"all", "all reports", "every", "everything", "any", "*", "-", "none"}
+
+
 def resolve_report_id(value: Any, catalog: Any) -> str:
     """Resolve a report reference to an exact id, or raise correctably.
 
@@ -99,8 +105,10 @@ def resolve_report_id(value: Any, catalog: Any) -> str:
 
 
 def resolve_report_ids(value: Any, catalog: Any) -> list[str] | None:
-    """Resolve a list of report references. None/empty means 'all reports'."""
+    """Resolve a list of report references. None/empty/'all' means 'all reports'."""
     items = coerce_list(value)
+    # A single "all"/"every"/etc means no scope, as does an empty list.
+    items = [i for i in items if i.strip().lower() not in _ALL_SENTINELS]
     if not items:
         return None
     return [resolve_report_id(item, catalog) for item in items]

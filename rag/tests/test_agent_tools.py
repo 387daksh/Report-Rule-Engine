@@ -214,3 +214,22 @@ def test_describe_schema_reports_population(registry, ctx):
     # organisation is empty on this report; the tool must say so, not hide it.
     assert result.content["report_fields"]["organisation"]["populated"] == 0
     assert result.content["finding_fields"]["severity"]["populated"] == 3
+
+
+# --------------------------------------------------------------------------
+# "all" sentinel — the agent reaches for it constantly
+# --------------------------------------------------------------------------
+
+
+def test_all_means_no_scope_not_a_report_to_resolve(registry, ctx):
+    """Regression: the model passes report_id='all' to mean every report.
+    It must aggregate across all, not error on an unresolvable 'all'."""
+    result = _run(registry, ctx, "aggregate_findings", by="severity", report_id="all")
+    assert result.ok, result.error
+    assert result.content["total"] > 0
+
+
+def test_all_reports_sentinel_on_count(registry, ctx):
+    result = _run(registry, ctx, "count_findings", severity="High", report_id="all reports")
+    assert result.ok
+    assert result.content["count"] >= 1

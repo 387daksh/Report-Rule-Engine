@@ -18,6 +18,13 @@ from pydantic import BaseModel, Field
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
+
+def _sse(event: str, data: dict) -> str:
+    """One Server-Sent Event frame."""
+    import json as _json
+
+    return f"event: {event}\ndata: {_json.dumps(data, default=str)}\n\n"
+
 from ragaudit.app import Application
 from ragaudit.observability import new_trace_id
 
@@ -72,9 +79,37 @@ class AskResponse(BaseModel):
     citations: list[CitationOut] = []
     figures: list[FigureOut] = []
     review_flags: list[str] = []
+    blocks: list[dict] = []      # tables, charts, metrics the UI draws
+    steps: list[dict] = []       # the tool-call trace, for an auditable answer
     trace_id: str
     latency_s: float
     model: str = ""
+
+
+def _answer_to_response(answer, session_id: str, fallback_trace: str) -> AskResponse:
+    return AskResponse(
+        answer=answer.text,
+        session_id=session_id,
+        route=answer.route,
+        abstained=answer.abstained,
+        abstention_reason=answer.abstention_reason,
+        citations=[
+            CitationOut(chunk_id=c.chunk_id, report_id=c.report_id, field_path=c.field_path,
+                        quote=c.quote, finding_id=c.finding_id)
+            for c in answer.citations
+        ],
+        figures=[
+            FigureOut(token=f.token, report_id=f.report_id, page=f.page, available=f.available,
+                      url=f"/figures/{f.report_id}/{f.token.strip('[]')}" if f.available else None)
+            for f in answer.figures
+        ],
+        review_flags=answer.review_flags,
+        blocks=answer.blocks,
+        steps=answer.steps,
+        trace_id=answer.trace_id or fallback_trace,
+        latency_s=answer.latency_s,
+        model=answer.model,
+    )
 
 
 # --------------------------------------------------------------------------
@@ -152,37 +187,42 @@ def create_app(application: Application | None = None) -> FastAPI:
             logger.exception("ask failed", extra={"trace_id": trace})
             raise HTTPException(status_code=500, detail=f"internal error (trace {trace})") from exc
 
-        return AskResponse(
-            answer=answer.text,
-            session_id=session.session_id,
-            route=answer.route,
-            abstained=answer.abstained,
-            abstention_reason=answer.abstention_reason,
-            citations=[
-                CitationOut(
-                    chunk_id=c.chunk_id,
-                    report_id=c.report_id,
-                    field_path=c.field_path,
-                    quote=c.quote,
-                    finding_id=c.finding_id,
+        return _answer_to_response(answer, session.session_id, trace)
+
+    @api.post("/ask/stream")
+    def ask_stream(request: AskRequest, app: Application = Depends(get_application)):
+        """Server-Sent Events: progress, then the final answer.
+
+        An agent run on CPU is tens of seconds; a blank blocking POST reads as
+        a hang. This streams a 'started' event, then the final 'answer' event.
+        (Per-step streaming is a later refinement; the transport is in place so
+        the UI shows progress rather than a frozen spinner.)
+        """
+        import json as _json
+
+        from fastapi.responses import StreamingResponse
+
+        trace = new_trace_id()
+
+        def events():
+            yield _sse("status", {"state": "working", "trace_id": trace})
+            try:
+                chat = app.build_chat()
+                answer, session = chat.ask(
+                    request.question, session_id=request.session_id, report_ids=request.report_ids,
                 )
-                for c in answer.citations
-            ],
-            figures=[
-                FigureOut(
-                    token=f.token,
-                    report_id=f.report_id,
-                    page=f.page,
-                    available=f.available,
-                    url=f"/figures/{f.report_id}/{f.token.strip('[]')}" if f.available else None,
-                )
-                for f in answer.figures
-            ],
-            review_flags=answer.review_flags,
-            trace_id=answer.trace_id or trace,
-            latency_s=answer.latency_s,
-            model=answer.model,
-        )
+            except Exception as exc:  # never leak a stack trace to the stream
+                logger.exception("ask_stream failed", extra={"trace_id": trace})
+                yield _sse("error", {"detail": f"internal error (trace {trace})"})
+                return
+            payload = _answer_to_response(answer, session.session_id, trace).model_dump()
+            # Steps are emitted as their own events so the UI can show the trace.
+            for step in answer.steps:
+                yield _sse("step", step)
+            yield _sse("answer", payload)
+
+        return StreamingResponse(events(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
     @api.get("/findings")
     def findings(
