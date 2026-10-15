@@ -20,10 +20,9 @@ from typing import Any
 from ragaudit.agent.coerce import (
     as_str,
     bounded_limit,
-    coerce_list,
     coerce_severity,
     coerce_status,
-    resolve_report_ids,
+    scoped_report_ids,
 )
 from ragaudit.agent.registry import ToolContext, ToolError, ToolGroup, ToolRegistry, ToolResult
 
@@ -50,7 +49,7 @@ def _filters(ctx: ToolContext, args: dict[str, Any]) -> dict[str, Any]:
     severity = coerce_severity(args.get("severity"))
     status = coerce_status(args.get("status"))
     return {
-        "report_ids": resolve_report_ids(args.get("report_ids") or args.get("report_id"), ctx.catalog),
+        "report_ids": scoped_report_ids(ctx, args),
         "severities": [severity] if severity else None,
         "statuses": [status] if status else None,
         "cwe": as_str(args.get("cwe")) or None,
@@ -80,7 +79,7 @@ def _aggregate_findings(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
     """One- or two-dimensional breakdown. The result is already renderable."""
     by = as_str(args.get("by") or "severity").lower()
     second = as_str(args.get("then_by")).lower() or None
-    report_ids = resolve_report_ids(args.get("report_ids") or args.get("report_id"), ctx.catalog)
+    report_ids = scoped_report_ids(ctx, args)
 
     valid = {"severity", "status", "report"}
     if by not in valid:
@@ -121,7 +120,7 @@ def _aggregate_findings(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
 
 def _distinct_values(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
     field = as_str(args.get("field") or "severity").lower()
-    report_ids = resolve_report_ids(args.get("report_ids") or args.get("report_id"), ctx.catalog)
+    report_ids = scoped_report_ids(ctx, args)
     findings = ctx.catalog.findings(report_ids=report_ids)
 
     extract = {
@@ -153,7 +152,7 @@ def _get_finding(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
     fid = as_str(args.get("finding_id"))
     if not fid:
         raise ToolError("finding_id is required")
-    report_ids = resolve_report_ids(args.get("report_id"), ctx.catalog)
+    report_ids = scoped_report_ids(ctx, args)
     matches = [f for f in ctx.catalog.findings(report_ids=report_ids) if f.finding_id == fid]
     if not matches:
         raise ToolError(f"no finding '{fid}'" + (f" in {report_ids}" if report_ids else " in any report"))

@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from ragaudit.agent.coerce import resolve_report_ids
+from ragaudit.agent.coerce import scoped_report_ids, resolve_report_ids
 from ragaudit.agent.registry import ToolContext, ToolGroup, ToolRegistry, ToolResult
 
 
@@ -38,7 +38,7 @@ def _report_quality(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
 
 def _find_data_gaps(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
     """Findings missing expected fields, corpus-wide or scoped."""
-    report_ids = resolve_report_ids(args.get("report_ids") or args.get("report_id"), ctx.catalog)
+    report_ids = scoped_report_ids(ctx, args)
     findings = ctx.catalog.findings(report_ids=report_ids)
 
     missing_cwe = [{"report_id": f.report_id, "finding_id": f.finding_id}

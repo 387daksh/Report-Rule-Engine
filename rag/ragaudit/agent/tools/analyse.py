@@ -10,13 +10,13 @@ from __future__ import annotations
 from typing import Any
 
 from ragaudit.agent.compute import ComputeError, compute
-from ragaudit.agent.coerce import as_str, resolve_report_ids
+from ragaudit.agent.coerce import scoped_report_ids, as_str, resolve_report_ids
 from ragaudit.agent.registry import ToolContext, ToolError, ToolGroup, ToolRegistry, ToolResult
 
 
 def _compare_reports(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
     """Side-by-side of two or more reports across structured dimensions."""
-    report_ids = resolve_report_ids(args.get("report_ids"), ctx.catalog)
+    report_ids = scoped_report_ids(ctx, args)
     if not report_ids or len(report_ids) < 2:
         all_ids = ctx.catalog.report_ids()
         if len(all_ids) < 2:
@@ -59,7 +59,7 @@ def _find_repeat_findings(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
     The is_repeat field and cross-report CWE/CVE overlap exist in the schema
     and were previously unused.
     """
-    report_ids = resolve_report_ids(args.get("report_ids"), ctx.catalog)
+    report_ids = scoped_report_ids(ctx, args)
     findings = ctx.catalog.findings(report_ids=report_ids)
 
     by_key: dict[tuple[str, str], list[dict[str, str]]] = {}

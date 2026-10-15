@@ -114,6 +114,28 @@ def resolve_report_ids(value: Any, catalog: Any) -> list[str] | None:
     return [resolve_report_id(item, catalog) for item in items]
 
 
+def scoped_report_ids(ctx: Any, args: dict[str, Any]) -> list[str] | None:
+    """Report scope for a tool call, honouring the context's default.
+
+    The model's explicit report_ids win; absent them, the context default
+    applies (the UI selector, or a singular named report). This is what stops
+    a "Tatva report" question from pulling 4-REPORT evidence when the small
+    model forgets to scope its own calls.
+
+    Note the one exception: an explicit 'all' from the model means the user
+    widened on purpose, so the default is not re-imposed.
+    """
+    raw = args.get("report_ids") or args.get("report_id")
+    if raw is not None and as_str(raw).lower() not in _ALL_SENTINELS:
+        explicit = resolve_report_ids(raw, ctx.catalog)
+        if explicit is not None:
+            return explicit
+        # raw was a list of sentinels -> explicit widening
+        return None
+    # No scope from the model: apply the context default (may be None = all).
+    return getattr(ctx, "default_scope", None)
+
+
 def bounded_limit(value: Any, *, default: int, maximum: int) -> int:
     try:
         n = int(value)

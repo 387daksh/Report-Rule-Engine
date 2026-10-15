@@ -225,3 +225,42 @@ def test_chitchat_still_bypasses_the_agent(make_service):
     assert answer.route == "chitchat"
     assert llm.loop_calls == 0, "greeting reached the agent loop"
     assert llm.finalize_calls == 0
+
+
+# --------------------------------------------------------------------------
+# Scope enforcement — report filtering is the whole point
+# --------------------------------------------------------------------------
+
+
+def test_named_report_scopes_the_whole_run(make_service, loaded):
+    """'In the Tatva report' must not pull evidence from other reports, even
+    when the small model forgets to scope its own tool calls."""
+    cid = _chunk_id_for(loaded, "OBS-01")
+    # The model searches WITHOUT a report_id; the default scope must apply.
+    llm = ScriptedLLM(
+        [[("search_reports", {"query": "access control"})], None],
+        finalize_json=_finalize_json("Found access control issues.",
+                                     [{"chunk_id": cid, "quote": "The admin endpoint did not enforce authorisation checks"}]),
+    )
+    answer, _ = make_service(llm).ask("In the Tatva report, what access control issues were found?")
+    # Every retrieved chunk must be from 2-REPORT (Tatva), none from elsewhere.
+    assert answer.retrieved
+    assert all(r.chunk.report_id == "2-REPORT" for r in answer.retrieved)
+
+
+def test_ui_scope_is_enforced_in_the_agent_path(make_service, loaded):
+    cid = _chunk_id_for(loaded, "OBS-01")
+    llm = ScriptedLLM(
+        [[("search_reports", {"query": "anything"})], None],
+        finalize_json=_finalize_json("x", [{"chunk_id": cid, "quote": "The admin endpoint did not enforce authorisation checks"}]),
+    )
+    answer, _ = make_service(llm).ask("what issues?", report_ids=["2-REPORT"])
+    assert all(r.chunk.report_id == "2-REPORT" for r in answer.retrieved)
+
+
+def test_comparison_does_not_scope_to_one_report(make_service, loaded):
+    """'compare' naming one report must still see the others."""
+    from ragaudit.chat.service import _default_scope
+    # Unit-level: a comparison question with one named report yields no scope.
+    assert _default_scope(None, {"report_ids": ["2-REPORT"]}, "compare the Tatva report with report 4") is None
+    assert _default_scope(None, {"report_ids": ["2-REPORT"]}, "what is in the Tatva report") == ["2-REPORT"]

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ragaudit.agent.coerce import as_str, bounded_limit, resolve_report_ids
+from ragaudit.agent.coerce import scoped_report_ids, as_str, bounded_limit, resolve_report_ids
 from ragaudit.agent.registry import ToolContext, ToolError, ToolGroup, ToolRegistry, ToolResult
 
 #: How much of each chunk is shown to the model, and registered as citable.
@@ -42,7 +42,7 @@ def _search_reports(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
     query = as_str(args.get("query"))
     if not query:
         raise ToolError("query is required")
-    report_ids = resolve_report_ids(args.get("report_ids") or args.get("report_id"), ctx.catalog)
+    report_ids = scoped_report_ids(ctx, args)
     top_k = bounded_limit(args.get("top_k"), default=8, maximum=20)
 
     hits = ctx.retriever.retrieve(query, report_ids=report_ids, top_k=top_k)
@@ -64,7 +64,7 @@ def _keyword_search(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
     query = as_str(args.get("query"))
     if not query:
         raise ToolError("query is required")
-    report_ids = resolve_report_ids(args.get("report_ids") or args.get("report_id"), ctx.catalog)
+    report_ids = scoped_report_ids(ctx, args)
     limit = bounded_limit(args.get("limit"), default=10, maximum=25)
 
     hits = ctx.catalog.search_lexical(query, report_ids=report_ids, limit=limit)
@@ -91,7 +91,7 @@ def _get_finding_text(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
     fid = as_str(args.get("finding_id"))
     if not fid:
         raise ToolError("finding_id is required")
-    report_ids = resolve_report_ids(args.get("report_id"), ctx.catalog)
+    report_ids = scoped_report_ids(ctx, args)
 
     rows = ctx.catalog.all_chunks(report_ids=report_ids)
     matching = [r for r in rows if r["finding_id"] == fid]

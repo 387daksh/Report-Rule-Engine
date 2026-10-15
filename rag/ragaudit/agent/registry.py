@@ -77,6 +77,10 @@ class ToolContext:
     step_results: dict[int, Any] = field(default_factory=dict)
     current_step: int = 0
     resolved: dict[str, Any] = field(default_factory=dict)
+    # Default report scope applied when a tool call names no report. Enforces
+    # the UI scope selector and a singular named report ("the Tatva report")
+    # across every tool, so evidence never silently leaks from another report.
+    default_scope: list[str] | None = None
 
 
 @dataclass

@@ -152,12 +152,14 @@ class ChatService:
         from ragaudit.agent.loop import StopReason
         from ragaudit.agent.registry import ToolContext
 
+        resolved = _pre_resolve(question, self.catalog)
         ctx = ToolContext(
             catalog=self.catalog,
             retriever=self.retriever,
             settings=self.settings,
             ledger=EvidenceLedger(),
-            resolved=_pre_resolve(question, self.catalog),
+            resolved=resolved,
+            default_scope=_default_scope(scope, resolved, question),
         )
         history = _agent_history(session, self.max_history_turns)
         run = self.agent.run(question, ctx, history=history, trace_id=trace_id)
@@ -767,20 +769,57 @@ def _pre_resolve(question: str, catalog) -> dict:
         resolved["cve"] = sorted(cves)
 
     try:
+        q_words = set(_re.findall(r"[a-z0-9]+", question.lower()))
         reports = []
         for rid in catalog.report_ids():
             meta = catalog.get_report_meta(rid)
             title = (meta.title if meta else "") or ""
-            # A report is "named" when a distinctive word of its title appears.
-            for word in title.split():
-                if len(word) >= 4 and word.lower() in question.lower():
-                    reports.append(rid)
-                    break
+            # A report is "named" by a DISTINCTIVE title word. Common audit
+            # vocabulary ("report", "security", "api") matches every title and
+            # would name them all, defeating the scoping — so it is excluded.
+            distinctive = [
+                w.lower() for w in title.split()
+                if len(w) >= 4 and w.lower() not in _TITLE_STOPWORDS
+            ]
+            if any(w in q_words for w in distinctive):
+                reports.append(rid)
         if reports:
             resolved["report_ids"] = sorted(set(reports))
     except Exception:  # resolution is best-effort; never block the answer
         pass
     return resolved
+
+
+#: Audit-domain words common to most report titles; matching on them would
+#: "name" every report and defeat scoping.
+_TITLE_STOPWORDS = {
+    "report", "reports", "security", "assessment", "audit", "testing", "test",
+    "vapt", "api", "apis", "application", "web", "network", "mobile", "review",
+    "penetration", "pentest", "cyber", "cybersecurity", "final", "draft", "the",
+}
+
+
+_COMPARISON_RE = _re.compile(
+    r"\b(compare|versus|vs\.?|difference between|across (?:all |both )?reports|"
+    r"both reports|each report|every report|which report)\b", _re.I)
+
+
+def _default_scope(ui_scope, resolved: dict, question: str) -> list[str] | None:
+    """The report scope tools default to when a call names none.
+
+    The UI selector is a hard choice and always wins. Otherwise a singular
+    named report scopes the run — unless the question is a comparison, where
+    naming one report must not exclude the others. Returns None (all reports)
+    when nothing constrains it.
+    """
+    if ui_scope:
+        return list(ui_scope)
+    if _COMPARISON_RE.search(question):
+        return None
+    named = resolved.get("report_ids")
+    if named and len(named) == 1:
+        return named
+    return None
 
 
 def _agent_history(session, max_turns: int) -> list[dict]:
