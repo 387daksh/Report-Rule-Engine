@@ -28,6 +28,7 @@ from ragaudit.generate.prompts import (
     ANSWER_SCHEMA,
     REWRITE_SYSTEM,
     SYSTEM_PROMPT,
+    build_agent_finalize_prompt,
     build_chat_prompt,
     build_rewrite_prompt,
     estimate_tokens,
@@ -71,6 +72,8 @@ class ChatService:
         rewrite_queries: bool = True,
         icl_k: int = 3,
         generation_k: int = 8,
+        agent=None,
+        settings=None,
     ) -> None:
         self.catalog = catalog
         self.retriever = retriever
@@ -82,6 +85,11 @@ class ChatService:
         self.rewrite_queries = rewrite_queries
         self.icl_k = icl_k
         self.generation_k = generation_k
+        # When an AgentLoop is injected, every non-chitchat question goes
+        # through it. Without one, the old router path runs unchanged — the
+        # kill switch and the way the test suite stays green.
+        self.agent = agent
+        self.settings = settings
 
     # -- public ----------------------------------------------------------
 
@@ -113,19 +121,146 @@ class ChatService:
         )
 
         if plan.route is Route.CHITCHAT:
+            # Greetings never reach the model, agent or not.
             answer = self._chitchat_answer(plan, scope)
+        elif self.agent is not None:
+            answer = self._agent_answer(question, session, scope, trace_id)
         elif plan.route is Route.STRUCTURED:
             answer = self.structured.answer(search_query, plan, report_ids=scope)
         else:
             answer = self._narrative_answer(question, search_query, plan, session, scope, trace_id)
             if plan.route is Route.HYBRID:
                 answer = self._merge_structured(answer, search_query, plan, scope)
+            answer.route = plan.route.value
 
         answer.trace_id = trace_id
         answer.latency_s = time.monotonic() - started
-        answer.route = plan.route.value
         self.sessions.append(session, Turn(question=question, answer=answer))
         return answer, session
+
+    # -- agent -----------------------------------------------------------
+
+    def _agent_answer(self, question, session, scope, trace_id) -> Answer:
+        """Run the agent loop, then finalise through the existing verifier.
+
+        The loop gathers evidence into a ledger; the answer is produced either
+        by a deterministic shortcut (one structured tool answered outright) or
+        by one schema-constrained finalize call whose verification reuses
+        ``_build_answer`` unchanged.
+        """
+        from ragaudit.agent.evidence import EvidenceLedger
+        from ragaudit.agent.loop import StopReason
+        from ragaudit.agent.registry import ToolContext
+
+        ctx = ToolContext(
+            catalog=self.catalog,
+            retriever=self.retriever,
+            settings=self.settings,
+            ledger=EvidenceLedger(),
+            resolved=_pre_resolve(question, self.catalog),
+        )
+        history = _agent_history(session, self.max_history_turns)
+        run = self.agent.run(question, ctx, history=history, trace_id=trace_id)
+
+        # Infrastructure failure or a dead backend: abstain, but keep whatever
+        # exact structured results and blocks were gathered — they are true.
+        if run.stop_reason in (StopReason.LLM_UNAVAILABLE, StopReason.INFRA_ERROR):
+            return self._agent_failed(run, run.stop_reason)
+
+        shortcut = self._shortcut_answer(run, question, scope)
+        if shortcut is not None:
+            return shortcut
+
+        return self._finalize_answer(question, run, scope)
+
+    def _shortcut_answer(self, run, question, scope) -> Answer | None:
+        """Deterministic reply when one structured tool answered outright.
+
+        No finalize model call: the number is from SQL and the sentence is
+        templated, exactly as the old structured route produced. Returns None
+        when the run does not qualify, so the finalize path takes over.
+        """
+        tool = run.only_structured_tool
+        if tool is None:
+            return None
+        step = next(s for s in run.steps if s.error is None)
+        content = run.step_results.get(step.step, {})
+
+        text = _render_structured_text(tool, step.arguments, content)
+        if text is None:
+            return None
+
+        answer = Answer(text=text, route="structured", abstained=False)
+        answer.blocks = list(run.blocks)
+        answer.steps = _step_dicts(run.steps)
+        answer.review_flags.append(f"agent_shortcut:{tool}")
+        return answer
+
+    def _finalize_answer(self, question, run, scope) -> Answer:
+        from ragaudit.agent.loop import StopReason
+
+        retrieved = run.ledger.as_retrieved()
+        coverage = _coverage_note(run)
+
+        # Budget-limited runs still try to answer from what was gathered,
+        # labelled partial, rather than discarding the work.
+        partial = run.stop_reason in (
+            StopReason.MAX_STEPS, StopReason.DEADLINE, StopReason.TOKEN_BUDGET,
+            StopReason.NO_PROGRESS, StopReason.TOOL_ERRORS,
+        )
+
+        prompt = build_agent_finalize_prompt(
+            question, retrieved, structured_summary=run.structured_summary, coverage_note=coverage
+        )
+        try:
+            completion = self.llm.chat(
+                [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": prompt}],
+                format_schema=ANSWER_SCHEMA,
+            )
+        except (LLMError, LLMUnavailable) as exc:
+            logger.error("agent finalize failed: %s", exc)
+            return self._agent_failed(run, StopReason.LLM_UNAVAILABLE)
+
+        answer = self._build_answer(completion, retrieved, _AgentPlan())
+        answer.blocks = list(run.blocks)
+        answer.steps = _step_dicts(run.steps)
+        answer.route = _effective_route(run)
+
+        # Agent-path hardening: a free-formed narrative claim with zero verified
+        # chunk citations is not grounded. The single-pass path only flags this;
+        # after many tool steps it must force an abstention.
+        if not answer.abstained and not answer.citations and not run.structured_summary:
+            answer.abstained = True
+            answer.abstention_reason = "no_verified_citation"
+            answer.text = (
+                "I gathered evidence but could not ground an answer in it. "
+                + _coverage_sentence(run)
+            )
+            answer.review_flags.append("agent_forced_abstention")
+
+        if partial:
+            answer.review_flags.append(f"{run.stop_reason.value}:partial")
+        return answer
+
+    def _agent_failed(self, run, stop_reason) -> Answer:
+        """Honest failure that keeps the exact results already gathered."""
+        text = (
+            "The language model backend is unavailable, so I could not compose a full answer."
+            if stop_reason.value == "llm_unavailable"
+            else "I hit an internal error while working on that."
+        )
+        if run.structured_summary or run.blocks:
+            text += " " + _coverage_sentence(run) + " (These exact results are still valid.)"
+        answer = Answer(
+            text=text,
+            abstained=True,
+            abstention_reason=stop_reason.value,
+            route=_effective_route(run),
+        )
+        answer.blocks = list(run.blocks)
+        answer.steps = _step_dicts(run.steps)
+        answer.review_flags.append(stop_reason.value)
+        return answer
 
     # -- non-questions ---------------------------------------------------
 
@@ -587,3 +722,158 @@ def _is_sublist(needle: list[str], haystack: list[str]) -> bool:
         if haystack[start] == first and haystack[start : start + len(needle)] == needle:
             return True
     return False
+
+
+# --------------------------------------------------------------------------
+# agent helpers
+# --------------------------------------------------------------------------
+
+import re as _re  # noqa: E402
+
+_OBS_RE = _re.compile(r"\bOBS[-\s]?(\d+)\b", _re.I)
+_CWE_RE = _re.compile(r"\bCWE[-\s]?(\d+)\b", _re.I)
+_CVE_RE = _re.compile(r"\b(CVE-\d{4}-\d{4,})\b", _re.I)
+
+
+class _AgentPlan:
+    """Minimal plan stand-in so _build_answer's plan.route.value works.
+
+    The agent computes the effective route after verification, so the value
+    here is a placeholder that _finalize_answer overwrites.
+    """
+
+    class _R:
+        value = "agent"
+
+    route = _R()
+
+
+def _pre_resolve(question: str, catalog) -> dict:
+    """Deterministically resolve entities named in the question.
+
+    Report names, finding ids and CWE/CVE are pulled out and resolved before
+    the model sees the question, so the agent needs fewer turns and is never
+    relied on for the resolution step that matters most.
+    """
+    resolved: dict = {}
+    findings = {m.group(0).upper().replace(" ", "-") for m in _OBS_RE.finditer(question)}
+    if findings:
+        resolved["finding_ids"] = sorted(findings)
+    cwes = {f"CWE-{m.group(1)}" for m in _CWE_RE.finditer(question)}
+    if cwes:
+        resolved["cwe"] = sorted(cwes)
+    cves = {m.group(1).upper() for m in _CVE_RE.finditer(question)}
+    if cves:
+        resolved["cve"] = sorted(cves)
+
+    try:
+        reports = []
+        for rid in catalog.report_ids():
+            meta = catalog.get_report_meta(rid)
+            title = (meta.title if meta else "") or ""
+            # A report is "named" when a distinctive word of its title appears.
+            for word in title.split():
+                if len(word) >= 4 and word.lower() in question.lower():
+                    reports.append(rid)
+                    break
+        if reports:
+            resolved["report_ids"] = sorted(set(reports))
+    except Exception:  # resolution is best-effort; never block the answer
+        pass
+    return resolved
+
+
+def _agent_history(session, max_turns: int) -> list[dict]:
+    """Recent turns as chat messages for the agent's context."""
+    out: list[dict] = []
+    for turn in session.turns[-max_turns:]:
+        out.append({"role": "user", "content": turn.question})
+        text = turn.answer.text
+        out.append({"role": "assistant", "content": text if len(text) <= 300 else text[:300] + "..."})
+    return out
+
+
+def _step_dicts(steps) -> list[dict]:
+    return [
+        {"step": s.step, "tool": s.tool, "arguments": s.arguments,
+         "summary": s.summary, "duration_s": round(s.duration_s, 3),
+         "error": s.error}
+        for s in steps
+    ]
+
+
+def _effective_route(run) -> str:
+    """Report the lane the agent actually used, so eval's expected_route still
+    means something and 'agent' is a value rather than a flattening."""
+    tools = {s.tool for s in run.steps if s.error is None}
+    searched = bool(tools & {"search_reports", "keyword_search", "get_finding_text"})
+    structured = bool(tools & {"count_findings", "aggregate_findings", "query_findings",
+                               "distinct_values", "top_values", "get_finding"})
+    n_search = sum(1 for s in run.steps if s.tool in
+                   {"search_reports", "keyword_search", "get_finding_text"} and s.error is None)
+    if n_search > 1 or len(tools) > 3:
+        return "agent"
+    if searched and structured:
+        return "hybrid"
+    if searched:
+        return "narrative"
+    if structured:
+        return "structured"
+    return "agent"
+
+
+def _coverage_note(run) -> str:
+    reports = {s.arguments.get("report_id") for s in run.steps if s.arguments.get("report_id")}
+    bits = [f"{len(run.ledger)} evidence passage(s) gathered over {len(run.steps)} tool call(s)"]
+    if run.stop_reason.value != "finished":
+        bits.append(f"the run stopped early ({run.stop_reason.value})")
+    return "; ".join(bits)
+
+
+def _coverage_sentence(run) -> str:
+    return (
+        f"I examined {len(run.steps)} tool result(s) and gathered "
+        f"{len(run.ledger)} evidence passage(s)."
+    )
+
+
+def _render_structured_text(tool: str, args: dict, content: dict) -> str | None:
+    """Deterministic one-liner for the structured shortcut. None = no shortcut."""
+    if tool == "count_findings":
+        filt = content.get("filters") or {}
+        where = _describe_filters(filt)
+        n = content.get("count", 0)
+        return f"{n} finding{'s' if n != 1 else ''} match{'' if n == 1 else ''} {where}." if where \
+            else f"There are {n} finding{'s' if n != 1 else ''} in scope."
+    if tool == "aggregate_findings":
+        counts = content.get("counts") or content.get("cross_tab")
+        dim = content.get("dimension") or f"{content.get('rows')} by {content.get('columns')}"
+        if isinstance(counts, dict) and content.get("counts"):
+            parts = ", ".join(f"{k}: {v}" for k, v in content["counts"].items())
+            return f"Findings by {dim} — {parts}. (See the chart.)"
+        return f"Cross-tab of {dim} computed; see the chart."
+    if tool in ("distinct_values", "top_values"):
+        field = content.get("field", "value")
+        vals = content.get("values") or {v["value"]: v["count"] for v in content.get("top", [])}
+        if not vals:
+            return f"No {field} values are present in scope."
+        parts = ", ".join(f"{k} ({v})" for k, v in list(vals.items())[:10])
+        return f"{field.title()} values in scope: {parts}."
+    # query_findings is a list; let the finalize call phrase it rather than
+    # dumping rows deterministically.
+    return None
+
+
+def _describe_filters(filters: dict) -> str:
+    bits = []
+    if filters.get("severities"):
+        bits.append("severity " + "/".join(filters["severities"]))
+    if filters.get("statuses"):
+        bits.append("status " + "/".join(filters["statuses"]))
+    if filters.get("cwe"):
+        bits.append(f"CWE {filters['cwe']}")
+    if filters.get("cve"):
+        bits.append(f"CVE {filters['cve']}")
+    if filters.get("report_ids"):
+        bits.append("in " + ", ".join(filters["report_ids"]))
+    return " and ".join(bits)

@@ -82,6 +82,22 @@ class ChatSettings(BaseModel):
     session_ttl_s: int = 3600
 
 
+class AgentSettings(BaseModel):
+    # Agent-first: every non-chitchat question goes through the tool loop.
+    # The kill switch (false) restores the single-pass router path, which is
+    # how the pre-agent test suite stays meaningful and how to A/B.
+    enabled: bool = True
+    max_steps: int = 10
+    deadline_s: float = 90.0
+    step_timeout_s: float = 45.0
+    max_tool_errors: int = 4
+    max_searches: int = 4
+    no_progress_steps: int = 3
+    step_max_tokens: int = 384
+    max_exposed_tools: int = 24
+    prompt_token_ceiling: int = 12000
+
+
 class IngestSettings(BaseModel):
     chunk_max_tokens: int = 420
     chunk_overlap_tokens: int = 60
@@ -111,6 +127,7 @@ class Settings(BaseSettings):
     retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)
     generation: GenerationSettings = Field(default_factory=GenerationSettings)
     chat: ChatSettings = Field(default_factory=ChatSettings)
+    agent: AgentSettings = Field(default_factory=AgentSettings)
     ingest: IngestSettings = Field(default_factory=IngestSettings)
 
     def ensure_dirs(self) -> None:

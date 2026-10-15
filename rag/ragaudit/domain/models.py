@@ -257,3 +257,8 @@ class Answer:
     latency_s: float = 0.0
     model: str = ""
     trace_id: str = ""
+    # Agent additions: render blocks (tables, charts, metrics) the UI draws,
+    # and the tool-call trace that makes a multi-step answer auditable. Empty
+    # on the single-pass path.
+    blocks: list[dict] = field(default_factory=list)
+    steps: list[dict] = field(default_factory=list)

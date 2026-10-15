@@ -132,6 +132,30 @@ class Application:
             return RetrievalFewShot(bank, self.embedder, k=k)
         return FixedFewShot(bank, k=k)
 
+    def build_agent(self):
+        """The agent loop, or None when disabled (single-pass fallback)."""
+        if not self.settings.agent.enabled:
+            return None
+        from ragaudit.agent.loop import AgentConfig, AgentLoop
+        from ragaudit.agent.tools import build_registry
+
+        cfg = self.settings.agent
+        return AgentLoop(
+            self.llm,
+            build_registry(),
+            AgentConfig(
+                max_steps=cfg.max_steps,
+                deadline_s=cfg.deadline_s,
+                step_timeout_s=cfg.step_timeout_s,
+                max_tool_errors=cfg.max_tool_errors,
+                max_searches=cfg.max_searches,
+                no_progress_steps=cfg.no_progress_steps,
+                step_max_tokens=cfg.step_max_tokens,
+                max_exposed_tools=cfg.max_exposed_tools,
+                prompt_token_ceiling=cfg.prompt_token_ceiling,
+            ),
+        )
+
     def build_chat(self, icl_strategy: str = "fixed_few_shot", icl_k: int = 3) -> ChatService:
         return ChatService(
             self.catalog,
@@ -143,6 +167,8 @@ class Application:
             rewrite_queries=self.settings.chat.rewrite_queries,
             icl_k=icl_k,
             generation_k=self.settings.retrieval.generation_k,
+            agent=self.build_agent(),
+            settings=self.settings,
         )
 
     def build_ingest(self) -> IngestPipeline:
