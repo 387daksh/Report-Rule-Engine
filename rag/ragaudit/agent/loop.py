@@ -269,6 +269,14 @@ class AgentLoop:
 
     def _finish(self, run: AgentRun, ledger: EvidenceLedger) -> AgentRun:
         run.ledger = ledger
+        # Validate every block before it can reach the API: drop non-finite
+        # numbers and structurally bad blocks (one bad block must not sink the
+        # rest). The UI still escapes each string on render.
+        from ragaudit.agent.blocks import validate_blocks
+
+        run.blocks, block_errors = validate_blocks(run.blocks)
+        if block_errors:
+            logger.warning("dropped %d malformed block(s): %s", len(block_errors), block_errors)
         return run
 
     def _user_message(self, question: str, ctx: ToolContext) -> str:
