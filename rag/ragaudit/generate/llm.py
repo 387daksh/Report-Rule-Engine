@@ -20,10 +20,11 @@ reasoning tokens. Where a schema is used here, reasoning fields are declared
 
 from __future__ import annotations
 
+import json
 import logging
 import random
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import requests
@@ -40,6 +41,28 @@ class LLMUnavailable(LLMError):
 
 
 @dataclass
+class ToolCall:
+    """One tool invocation requested by the model.
+
+    ``arguments`` is already a dict: Ollama returns parsed arguments, unlike
+    the OpenAI wire format where they arrive as a JSON string. ``call_id`` is
+    often absent, so nothing may depend on it being present.
+    """
+
+    name: str
+    arguments: dict[str, Any] = field(default_factory=dict)
+    call_id: str = ""
+
+    def signature(self) -> str:
+        """Stable key for duplicate-call detection.
+
+        With ``temperature=0`` and a fixed seed, a stuck model repeats a call
+        byte-identically forever, so the loop needs to recognise a repeat.
+        """
+        return f"{self.name}({json.dumps(self.arguments, sort_keys=True, default=str)})"
+
+
+@dataclass
 class Completion:
     text: str
     latency_s: float
@@ -47,6 +70,7 @@ class Completion:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     attempts: int = 1
+    tool_calls: list[ToolCall] = field(default_factory=list)
     #: True when generation stopped because it hit the token cap rather
     #: than because the model finished. A truncated structured response is
     #: unparseable, and 'ran out of room' is a far more actionable
@@ -86,6 +110,46 @@ class _CircuitBreaker:
 # Status codes worth retrying. Everything else is a client error that will
 # fail identically on every attempt.
 RETRYABLE_STATUS = {408, 425, 429, 500, 502, 503, 504}
+
+
+def _parse_tool_calls(message: dict[str, Any]) -> list[ToolCall]:
+    """Extract tool calls from an Ollama chat message.
+
+    Tolerant by design. A malformed entry is skipped rather than raising:
+    the loop can recover by telling the model its call was unreadable, but it
+    cannot recover from an exception thrown inside the client. Ollama returns
+    ``arguments`` already parsed, but older builds and some proxies send a
+    JSON string, so both are accepted.
+    """
+    raw = message.get("tool_calls")
+    if not isinstance(raw, list):
+        return []
+
+    calls: list[ToolCall] = []
+    for entry in raw:
+        if not isinstance(entry, dict):
+            continue
+        function = entry.get("function")
+        if not isinstance(function, dict):
+            continue
+        name = str(function.get("name") or "").strip()
+        if not name:
+            continue
+
+        arguments = function.get("arguments")
+        if isinstance(arguments, str):
+            try:
+                arguments = json.loads(arguments)
+            except json.JSONDecodeError:
+                logger.warning("tool call %s had unparseable argument string", name)
+                arguments = {}
+        if not isinstance(arguments, dict):
+            arguments = {}
+
+        calls.append(
+            ToolCall(name=name, arguments=arguments, call_id=str(entry.get("id") or ""))
+        )
+    return calls
 
 
 class OllamaClient:
@@ -128,11 +192,26 @@ class OllamaClient:
 
     def chat(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         format_schema: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
         max_tokens: int | None = None,
+        timeout_s: float | None = None,
     ) -> Completion:
+        """Chat completion, optionally with tools or a response schema.
+
+        ``tools`` and ``format_schema`` are mutually exclusive. Ollama's
+        handling of both together is unreliable, and the agent design does not
+        need it: the tool loop runs unconstrained and a separate, tool-free
+        call produces the schema-constrained answer.
+        """
+        if tools and format_schema:
+            raise ValueError(
+                "tools and format_schema cannot be combined; run the tool loop "
+                "unconstrained and use a separate schema-constrained call to finalise"
+            )
+
         payload: dict[str, Any] = {
             "model": self.model_name,
             "messages": messages,
@@ -142,17 +221,22 @@ class OllamaClient:
         }
         if format_schema:
             payload["format"] = format_schema
-        data, latency, attempts = self._post("/api/chat", payload)
+        if tools:
+            payload["tools"] = tools
+
+        data, latency, attempts = self._post("/api/chat", payload, timeout_s=timeout_s)
         limit = max_tokens or self.max_tokens
         produced = int(data.get("eval_count") or 0)
+        message = data.get("message") or {}
         return Completion(
-            text=(data.get("message") or {}).get("content", "").strip(),
+            text=(message.get("content") or "").strip(),
             latency_s=latency,
             model=self.model_name,
             prompt_tokens=int(data.get("prompt_eval_count") or 0),
             completion_tokens=produced,
             attempts=attempts,
             truncated=produced >= limit,
+            tool_calls=_parse_tool_calls(message),
         )
 
     def generate(
@@ -162,6 +246,7 @@ class OllamaClient:
         system: str | None = None,
         format_schema: dict[str, Any] | None = None,
         max_tokens: int | None = None,
+        timeout_s: float | None = None,
     ) -> Completion:
         payload: dict[str, Any] = {
             "model": self.model_name,
@@ -173,7 +258,7 @@ class OllamaClient:
         }
         if format_schema:
             payload["format"] = format_schema
-        data, latency, attempts = self._post("/api/generate", payload)
+        data, latency, attempts = self._post("/api/generate", payload, timeout_s=timeout_s)
         limit = max_tokens or self.max_tokens
         produced = int(data.get("eval_count") or 0)
         return Completion(
@@ -213,7 +298,9 @@ class OllamaClient:
         """Tokens available for the prompt, leaving room for the response."""
         return max(512, self.context_tokens - self.max_tokens - 256)
 
-    def _post(self, path: str, payload: dict[str, Any]) -> tuple[dict[str, Any], float, int]:
+    def _post(
+        self, path: str, payload: dict[str, Any], *, timeout_s: float | None = None
+    ) -> tuple[dict[str, Any], float, int]:
         if self._breaker.is_open:
             raise LLMUnavailable(
                 f"LLM circuit is open for {self.base_url}; backend has been failing. "
@@ -223,10 +310,16 @@ class OllamaClient:
         url = f"{self.base_url}{path}"
         last_error: Exception | None = None
         started = time.monotonic()
+        # A per-call override lets the agent loop derive its read timeout from
+        # the time left in the run budget, instead of every step being free to
+        # consume the full construction-time timeout.
+        effective_timeout = (
+            (self.timeout[0], timeout_s) if timeout_s is not None else self.timeout
+        )
 
         for attempt in range(1, self.max_retries + 1):
             try:
-                response = self._session.post(url, json=payload, timeout=self.timeout)
+                response = self._session.post(url, json=payload, timeout=effective_timeout)
             except requests.RequestException as exc:
                 last_error = exc
                 self._breaker.record_failure()
